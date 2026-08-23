@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Speaking Marker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-mark">IS</div>
+      <div>
+        <div class="brand-title">IELTS Speaking Marker</div>
+        <div class="brand-sub">Công cụ chấm nói theo rubric IELTS — chạy offline trên máy của bạn</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" id="btnHistory">Lịch sử chấm</button>
+      <button class="btn" id="btnNew">+ Bài chấm mới</button>
+      <button class="btn btn-primary" id="btnSave">Lưu bài chấm</button>
+    </div>
+  </header>
+
+  <div class="student-bar">
+    <div class="field">
+      <label for="studentName">Học viên</label>
+      <input type="text" id="studentName" placeholder="Tên học viên">
+    </div>
+    <div class="field">
+      <label for="testDate">Ngày chấm</label>
+      <input type="date" id="testDate">
+    </div>
+    <div class="field">
+      <label for="testPart">Phần thi</label>
+      <input type="text" id="testPart" placeholder="Part 1 / 2 / 3 hoặc Full test">
+    </div>
+    <div class="field" style="flex:1; min-width:200px;">
+      <label for="examinerNote">Ghi chú nhanh</label>
+      <input type="text" id="examinerNote" placeholder="VD: mock test tuần 3, thi thật ngày 12/9">
+    </div>
+  </div>
+
+  <details class="tips">
+    <summary>⚠ Nguyên tắc chấm chặt — đọc trước khi cho điểm (bấm để mở/đóng)</summary>
+    <ul>
+      <li>Đừng cho band cao chỉ vì thí sinh nói liên tục — nếu có nhiều từ đệm (um, uh, like, you know...) lặp lại hoặc tự sửa lỗi nhiều lần, Fluency &amp; Coherence phải bị trừ.</li>
+      <li>Vốn từ "nghe có vẻ hay" nhưng dùng sai collocation hoặc sai ngữ cảnh thì không tính là band cao ở Lexical Resource — kiểm tra độ chính xác, không chỉ độ "kêu".</li>
+      <li>Câu phức nhưng đầy lỗi (chia động từ, giới từ, mạo từ) không phải Grammar cao — band 6 trở lên đòi hỏi câu phức chính xác, không chỉ đa dạng.</li>
+      <li>Phát âm sai các từ khóa/từ thông dụng phải trừ điểm Pronunciation dù ngữ điệu nghe tự nhiên.</li>
+      <li>Luôn nghe lại ít nhất 1 lần với tốc độ chậm (0.75x) trước khi chốt điểm, đặc biệt với Pronunciation.</li>
+      <li>Không làm tròn điểm lên "cho học viên vui" — dùng đúng công thức làm tròn IELTS (trung bình 4 tiêu chí, .25 làm tròn lên nửa band, .75 làm tròn lên nguyên band).</li>
+    </ul>
+  </details>
+
+  <div class="workspace">
+
+    <!-- LEFT: audio + transcript -->
+    <div class="col-left">
+
+      <div class="card">
+        <h2>🎧 Audio bài nói</h2>
+        <div class="dropzone" id="dropzone">
+          <div>Kéo thả file audio vào đây, hoặc</div>
+          <label class="dz-label" for="audioFile">chọn file từ máy</label>
+          <input type="file" id="audioFile" accept="audio/*">
+          <div class="small-note">Audio chỉ dùng tại chỗ trong trình duyệt, không tải lên đâu cả. Audio không được lưu lại giữa các phiên — chỉ transcript và điểm được lưu.</div>
+        </div>
+
+        <div class="audio-controls" id="audioControls">
+          <audio id="player" controls></audio>
+          <div class="speed-row">
+            <span class="small-note" style="margin:0;">Tốc độ:</span>
+            <button class="speed-btn" data-speed="0.75">0.75x</button>
+            <button class="speed-btn active" data-speed="1">1x</button>
+            <button class="speed-btn" data-speed="1.25">1.25x</button>
+            <button class="speed-btn" data-speed="1.5">1.5x</button>
+          </div>
+
+          <div class="flag-row">
+            <input type="text" id="flagNote" placeholder="Ghi chú tại thời điểm đang nghe (VD: sai phát âm 'clothes')">
+            <button class="btn btn-sm" id="btnFlag">Đánh dấu thời điểm</button>
+          </div>
+          <ul class="flag-list" id="flagList">
+            <li class="empty-hint">Chưa có đánh dấu nào. Nghe audio và bấm "Đánh dấu thời điểm" để ghi lại lỗi/điểm cần chú ý.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📝 Transcript <span class="badge" id="wordCountBadge">0 từ</span></h2>
+        <textarea class="transcript-area" id="transcript" placeholder="Dán transcript bạn vừa nghe/gõ lại vào đây..."></textarea>
+
+        <div class="stats-row" id="statsRow"></div>
+
+        <div class="preview-toggle">
+          <button class="btn btn-sm" id="btnPreview">Xem highlight tín hiệu (từ đệm / câu quá dài)</button>
+        </div>
+        <div class="highlight-preview" id="highlightPreview"></div>
+        <div class="legend">
+          <span><span class="dot warn"></span> Từ đệm / lặp từ — có thể ảnh hưởng Fluency &amp; Coherence</span>
+          <span><span class="dot note"></span> Câu dài &gt;25 từ — kiểm tra mạch lạc &amp; ngữ pháp</span>
+        </div>
+        <div class="small-note">Đây là gợi ý tự động dựa trên từ khóa, không thay thế đánh giá của giáo viên.</div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: rubric -->
+    <div class="col-right">
+
+      <div class="card overall-card">
+        <div class="display">Band điểm tổng</div>
+        <div class="score-meter">
+          <svg viewBox="0 0 120 120" class="score-ring">
+            <circle cx="60" cy="60" r="52" class="score-ring-track"></circle>
+            <circle cx="60" cy="60" r="52" class="score-ring-fill" id="ringFill"></circle>
+          </svg>
+          <div class="score-ring-label">
+            <span class="score-number" id="overallNumber">–</span>
+            <span class="score-total">/ 9.0</span>
+          </div>
+        </div>
+        <div class="overall-breakdown">
+          <div><div class="ob-label">FC</div><div class="ob-val" id="obFC">4</div></div>
+          <div><div class="ob-label">LR</div><div class="ob-val" id="obLR">4</div></div>
+          <div><div class="ob-label">GRA</div><div class="ob-val" id="obGRA">4</div></div>
+          <div><div class="ob-label">Pron</div><div class="ob-val" id="obPron">4</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Rubric chấm điểm</h2>
+
+        <div class="criterion" data-crit="fc">
+          <div class="criterion-head">
+            <span class="crit-name">Fluency &amp; Coherence</span>
+            <span class="crit-band">4</span>
+          </div>
+          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
+          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
+          <div class="criterion-desc"></div>
+        </div>
+
+        <div class="criterion" data-crit="lr">
+          <div class="criterion-head">
+            <span class="crit-name">Lexical Resource</span>
+            <span class="crit-band">4</span>
+          </div>
+          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
+          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
+          <div class="criterion-desc"></div>
+        </div>
+
+        <div class="criterion" data-crit="gra">
+          <div class="criterion-head">
+            <span class="crit-name">Grammatical Range &amp; Accuracy</span>
+            <span class="crit-band">4</span>
+          </div>
+          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
+          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
+          <div class="criterion-desc"></div>
+        </div>
+
+        <div class="criterion" data-crit="pron">
+          <div class="criterion-head">
+            <span class="crit-name">Pronunciation</span>
+            <span class="crit-band">4</span>
+          </div>
+          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
+          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
+          <div class="criterion-desc"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Nhận xét</h2>
+        <div class="small-note" style="margin-bottom:8px;">Gợi ý tự sinh từ band đã chọn + thống kê transcript. Bấm "Chèn vào ô nhận xét" rồi chỉnh sửa lại theo ý bạn.</div>
+        <div class="suggestion-box" id="suggestionBox"></div>
+        <div class="feedback-actions">
+          <button class="btn btn-sm" id="btnInsertFeedback">Chèn vào ô nhận xét</button>
+          <button class="btn btn-sm" id="btnRefreshSuggestion">Làm mới gợi ý</button>
+        </div>
+        <label class="field" style="margin-top:12px;">
+          <span style="font-size:var(--text-xs); color:var(--ink-600); font-weight:700; text-transform:uppercase;">Nhận xét cuối (gửi học viên)</span>
+        </label>
+        <textarea class="feedback-area" id="feedbackFinal" placeholder="Nhận xét chính thức của bạn sẽ ở đây..."></textarea>
+        <div class="feedback-actions">
+          <button class="btn btn-primary" id="btnExportReport">In / Xuất báo cáo (PDF)</button>
+          <button class="btn" id="btnExportCsv">Xuất CSV toàn bộ lịch sử</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h2>Lịch sử chấm</h2>
+    <button class="btn btn-ghost btn-sm" id="btnCloseDrawer">Đóng ✕</button>
+  </div>
+  <div id="historyList"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
