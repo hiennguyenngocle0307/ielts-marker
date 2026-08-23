@@ -4,254 +4,453 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IELTS Speaking Marker</title>
-<link rel="stylesheet" href="style.css">
+<style>
+  :root {
+    --blue-50:  #EEF4FF; --blue-100: #DCE9FF; --blue-300: #8FB8FF;
+    --blue-500: #3B6FE0; --blue-700: #1F4BB8; --blue-900: #0F2C6E;
+    --pink-100: #FFDCEA; --pink-500: #EC4899; --pink-900: #7A1748;
+    --yellow-50: #FFF9E0; --yellow-500: #F5B800; --yellow-700: #B88600;
+    --paper: #FFFFFF; --paper-tint: #FAFAFC;
+    --ink-900: #16182B; --ink-600: #4A4D66; --ink-300: #A6A8BD; --line: #E4E5F0;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper-tint); color: var(--ink-900);
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif; line-height: 1.5; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 20px 18px 60px; }
+  h1 { font-size: 1.4rem; margin: 0 0 2px; }
+  .sub { color: var(--ink-600); font-size: 0.85rem; margin-bottom: 18px; }
+  .card { background: var(--paper); border: 2px solid var(--line); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 1rem; margin: 0 0 12px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+  .field label { font-size: 0.75rem; color: var(--ink-600); font-weight: 700; }
+  input[type=text], input[type=date], textarea, select {
+    border: 2px solid var(--line); border-radius: 10px; padding: 9px 12px;
+    background: var(--paper-tint); font-size: 0.95rem; font-family: inherit; width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue-500); background: var(--paper); }
+  textarea { min-height: 160px; resize: vertical; line-height: 1.6; }
+  .btn { border: 2px solid var(--line); background: var(--paper); color: var(--ink-900);
+    border-radius: 10px; padding: 9px 16px; font-size: 0.85rem; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { border-color: var(--blue-300); background: var(--blue-50); }
+  .btn-primary { background: var(--blue-500); border-color: var(--blue-500); color: #fff; }
+  .btn-primary:hover { background: var(--blue-700); border-color: var(--blue-700); }
+  .btn-danger { color: #E0457A; }
+  .btn-danger:hover { background: #FFE8F0; border-color: #E0457A; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .small { font-size: 0.78rem; color: var(--ink-300); }
+  .stat { font-size: 0.85rem; color: var(--ink-600); margin-top: 8px; }
+  .stat b { color: var(--blue-700); }
+
+  .crit { border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .crit-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 10px; }
+  .crit-head .name { font-weight: 700; font-size: 0.9rem; }
+  .crit-head select { width: auto; min-width: 70px; font-weight: 700; color: var(--blue-700); }
+  .crit-desc { font-size: 0.83rem; color: var(--ink-600); background: var(--paper-tint);
+    border-radius: 8px; padding: 8px 10px; border-left: 3px solid var(--blue-500); }
+
+  .overall { text-align: center; }
+  .overall .num { font-size: 3rem; font-weight: 800; color: var(--blue-700); line-height: 1; }
+  .overall .lbl { font-size: 0.8rem; color: var(--ink-600); }
+  .breakdown { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 14px; }
+  .breakdown div { background: var(--paper-tint); border: 1px solid var(--line); border-radius: 8px; padding: 8px 4px; }
+  .breakdown .l { font-size: 0.6rem; color: var(--ink-600); text-transform: uppercase; }
+  .breakdown .v { font-weight: 800; color: var(--blue-700); font-size: 1.1rem; }
+
+  .saved-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; }
+  .saved-item .n { flex: 1; font-weight: 700; }
+  .saved-item .b { font-weight: 800; color: var(--yellow-700); background: var(--yellow-50);
+    border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
+    .pr-title { font-size: 20pt; font-weight: 800; margin-bottom: 4px; }
+    .pr-sub { font-size: 10pt; color: #555; margin-bottom: 16px; }
+    .pr-row { display: flex; gap: 24px; margin-bottom: 4px; font-size: 10.5pt; }
+    .pr-row b { min-width: 90px; display: inline-block; }
+    .pr-bands { width: 100%; border-collapse: collapse; margin: 14px 0; }
+    .pr-bands th, .pr-bands td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 10pt; }
+    .pr-bands td.big { font-size: 16pt; font-weight: 800; }
+    .pr-section { font-weight: 800; font-size: 12pt; margin: 16px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+    .pr-text { white-space: pre-wrap; font-size: 10.5pt; border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
+  }
+  #printArea { display: none; }
+</style>
 </head>
 <body>
-<div class="app-shell">
+<div class="wrap">
 
-  <header class="app-header">
-    <div class="brand">
-      <div class="brand-mark">IS</div>
-      <div>
-        <div class="brand-title">IELTS Speaking Marker</div>
-        <div class="brand-sub">Công cụ chấm nói theo rubric IELTS — chạy offline trên máy của bạn</div>
+  <h1>IELTS Speaking Marker</h1>
+  <div class="sub">Chấm nói IELTS theo rubric 4 tiêu chí — 1 file, mở là dùng, không cần cài gì.</div>
+
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label for="studentName">Học viên</label>
+        <input type="text" id="studentName" placeholder="Tên học viên">
       </div>
-    </div>
-    <div class="header-actions">
-      <button class="btn" id="btnHistory">Lịch sử chấm</button>
-      <button class="btn" id="btnNew">+ Bài chấm mới</button>
-      <button class="btn btn-primary" id="btnSave">Lưu bài chấm</button>
-    </div>
-  </header>
-
-  <div class="student-bar">
-    <div class="field">
-      <label for="studentName">Học viên</label>
-      <input type="text" id="studentName" placeholder="Tên học viên">
-    </div>
-    <div class="field">
-      <label for="testDate">Ngày chấm</label>
-      <input type="date" id="testDate">
-    </div>
-    <div class="field">
-      <label for="testPart">Phần thi</label>
-      <input type="text" id="testPart" placeholder="Part 1 / 2 / 3 hoặc Full test">
-    </div>
-    <div class="field">
-      <label for="teacherName">Giáo viên chấm</label>
-      <input type="text" id="teacherName" placeholder="Tên giáo viên">
-    </div>
-    <div class="field" style="flex:1; min-width:200px;">
-      <label for="examinerNote">Ghi chú nhanh</label>
-      <input type="text" id="examinerNote" placeholder="VD: mock test tuần 3, thi thật ngày 12/9">
+      <div class="field">
+        <label for="testDate">Ngày chấm</label>
+        <input type="date" id="testDate">
+      </div>
     </div>
   </div>
 
-  <details class="tips">
-    <summary>⚠ Nguyên tắc chấm chặt — đọc trước khi cho điểm (bấm để mở/đóng)</summary>
-    <ul>
-      <li>Đừng cho band cao chỉ vì thí sinh nói liên tục — nếu có nhiều từ đệm (um, uh, like, you know...) lặp lại hoặc tự sửa lỗi nhiều lần, Fluency &amp; Coherence phải bị trừ.</li>
-      <li>Vốn từ "nghe có vẻ hay" nhưng dùng sai collocation hoặc sai ngữ cảnh thì không tính là band cao ở Lexical Resource — kiểm tra độ chính xác, không chỉ độ "kêu".</li>
-      <li>Câu phức nhưng đầy lỗi (chia động từ, giới từ, mạo từ) không phải Grammar cao — band 6 trở lên đòi hỏi câu phức chính xác, không chỉ đa dạng.</li>
-      <li>Phát âm sai các từ khóa/từ thông dụng phải trừ điểm Pronunciation dù ngữ điệu nghe tự nhiên.</li>
-      <li>Luôn nghe lại ít nhất 1 lần với tốc độ chậm (0.75x) trước khi chốt điểm, đặc biệt với Pronunciation.</li>
-      <li>Không làm tròn điểm lên "cho học viên vui" — dùng đúng công thức làm tròn IELTS (trung bình 4 tiêu chí, .25 làm tròn lên nửa band, .75 làm tròn lên nguyên band).</li>
-    </ul>
-  </details>
-
-  <div class="workspace">
-
-    <!-- LEFT: audio + transcript -->
-    <div class="col-left">
-
-      <div class="card">
-        <h2>🎧 Audio bài nói <span class="badge" id="durationBadge"></span></h2>
-        <div class="small-note" style="margin-bottom:10px;">Hỗ trợ file dài (mock test 9–15 phút, Part 1+2+3 trong 1 file). Dùng timeline bên dưới để thấy lỗi phân bố ở đâu trong toàn bài, và nút "Lỗi trước/sau" để nhảy nhanh giữa các mốc đã đánh dấu.</div>
-        <div class="dropzone" id="dropzone">
-          <div>Kéo thả file audio vào đây, hoặc</div>
-          <label class="dz-label" for="audioFile">chọn file từ máy</label>
-          <input type="file" id="audioFile" accept="audio/*">
-          <div class="small-note">Audio chỉ dùng tại chỗ trong trình duyệt, không tải lên đâu cả. Audio không được lưu lại giữa các phiên — chỉ transcript và điểm được lưu.</div>
-        </div>
-
-        <div class="audio-controls" id="audioControls">
-          <audio id="player" controls></audio>
-          <div class="timeline" id="timeline"></div>
-
-          <div class="speed-row">
-            <span class="small-note" style="margin:0;">Tốc độ:</span>
-            <button class="speed-btn" data-speed="0.75">0.75x</button>
-            <button class="speed-btn active" data-speed="1">1x</button>
-            <button class="speed-btn" data-speed="1.25">1.25x</button>
-            <button class="speed-btn" data-speed="1.5">1.5x</button>
-            <span style="flex:1;"></span>
-            <button class="btn btn-sm btn-ghost" id="btnPrevFlag">◀ Lỗi trước</button>
-            <button class="btn btn-sm btn-ghost" id="btnNextFlag">Lỗi sau ▶</button>
-          </div>
-
-          <div class="error-form">
-            <div class="error-form-row">
-              <select id="errCategory" class="err-select">
-                <option value="pron">🗣️ Phát âm (âm/từ)</option>
-                <option value="into">🎵 Ngữ điệu / Trọng âm</option>
-                <option value="vocab">📖 Từ vựng / Collocation</option>
-                <option value="gram">✏️ Ngữ pháp</option>
-              </select>
-            </div>
-            <div class="error-form-row">
-              <input type="text" id="errHeard" placeholder="Nghe được gì? VD: phát âm /θ/ thành /s/ ở từ 'think', hoặc 'I go there yesterday'">
-            </div>
-            <div class="error-form-row">
-              <input type="text" id="errFix" placeholder="Sửa thành gì? VD: /θɪŋk/ đúng âm 'th', hoặc 'I went there yesterday'">
-            </div>
-            <div class="error-form-row">
-              <button class="btn btn-primary btn-sm" id="btnFlag">+ Ghi lỗi tại thời điểm đang nghe</button>
-            </div>
-          </div>
-
-          <div class="error-summary" id="errorSummary"></div>
-          <ul class="flag-list" id="flagList">
-            <li class="empty-hint">Chưa có lỗi nào được ghi. Nghe audio, chọn loại lỗi, mô tả rồi bấm "Ghi lỗi tại thời điểm đang nghe".</li>
-          </ul>
-        </div>
+  <div class="card">
+    <h2>🎧 Audio</h2>
+    <input type="file" id="audioFile" accept="audio/*">
+    <div id="audioWrap" style="display:none; margin-top:10px;">
+      <audio id="player" controls style="width:100%;"></audio>
+      <div class="actions">
+        <button class="btn" data-speed="0.75">0.75x</button>
+        <button class="btn" data-speed="1">1x</button>
+        <button class="btn" data-speed="1.25">1.25x</button>
       </div>
-
-      <div class="card">
-        <h2>📝 Transcript <span class="badge" id="wordCountBadge">0 từ</span></h2>
-        <textarea class="transcript-area" id="transcript" placeholder="Dán transcript bạn vừa nghe/gõ lại vào đây..."></textarea>
-
-        <div class="stats-row" id="statsRow"></div>
-      </div>
-
-      <div class="card">
-        <h2>🔍 Phân tích lỗi tự động <span class="badge" id="issueCountBadge">0 lỗi</span></h2>
-        <div class="small-note" style="margin-bottom:10px;">Tự động chạy khi bạn dán/sửa transcript — phát hiện ngữ pháp, từ vựng/collocation và câu quá dài dựa trên các mẫu lỗi phổ biến. Đây là <b>gợi ý phát hiện tự động</b>, không phải AI hiểu ngữ nghĩa hoàn toàn — luôn kiểm tra lại trước khi dùng.</div>
-
-        <div class="legend">
-          <span><span class="dot" style="background:var(--blue-500); border-radius:0; height:2px; width:14px; align-self:center;"></span> Gạch chân = lỗi Ngữ pháp</span>
-          <span><span class="dot" style="background:var(--pink-100); border:1px solid var(--pink-500);"></span> Highlight = lỗi Từ vựng/Collocation</span>
-          <span><span class="dot" style="background:transparent; border:2px solid var(--ink-300);"></span> Khung viền = câu quá dài/cấu trúc rối</span>
-          <span><b style="font-size:11px;">Đậm</b> = từ/cụm sai chính xác</span>
-        </div>
-
-        <div class="ann-layout">
-          <div class="ann-main" id="annotatedTranscript">
-            <span class="empty-hint">Dán transcript ở trên để xem phân tích.</span>
-          </div>
-          <div class="ann-side">
-            <div class="ann-side-title">💡 Gợi ý sửa</div>
-            <div id="suggestionPanel"><span class="empty-hint">Chưa có gợi ý.</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>📊 Bảng tổng hợp phân tích lỗi</h2>
-        <div id="errorTable"><span class="empty-hint">Chưa có dữ liệu — dán transcript và/hoặc nghe + ghi lỗi phát âm.</span></div>
-      </div>
-
-    </div>
-
-    <!-- RIGHT: rubric -->
-    <div class="col-right">
-
-      <div class="card overall-card">
-        <div class="display">Band điểm tổng</div>
-        <div class="score-meter">
-          <svg viewBox="0 0 120 120" class="score-ring">
-            <circle cx="60" cy="60" r="52" class="score-ring-track"></circle>
-            <circle cx="60" cy="60" r="52" class="score-ring-fill" id="ringFill"></circle>
-          </svg>
-          <div class="score-ring-label">
-            <span class="score-number" id="overallNumber">–</span>
-            <span class="score-total">/ 9.0</span>
-          </div>
-        </div>
-        <div class="overall-breakdown">
-          <div><div class="ob-label">FC</div><div class="ob-val" id="obFC">4</div></div>
-          <div><div class="ob-label">LR</div><div class="ob-val" id="obLR">4</div></div>
-          <div><div class="ob-label">GRA</div><div class="ob-val" id="obGRA">4</div></div>
-          <div><div class="ob-label">Pron</div><div class="ob-val" id="obPron">4</div></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Rubric chấm điểm</h2>
-
-        <div class="criterion" data-crit="fc">
-          <div class="criterion-head">
-            <span class="crit-name">Fluency &amp; Coherence</span>
-            <span class="crit-band">4</span>
-          </div>
-          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
-          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
-          <div class="criterion-desc"></div>
-        </div>
-
-        <div class="criterion" data-crit="lr">
-          <div class="criterion-head">
-            <span class="crit-name">Lexical Resource</span>
-            <span class="crit-band">4</span>
-          </div>
-          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
-          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
-          <div class="criterion-desc"></div>
-        </div>
-
-        <div class="criterion" data-crit="gra">
-          <div class="criterion-head">
-            <span class="crit-name">Grammatical Range &amp; Accuracy</span>
-            <span class="crit-band">4</span>
-          </div>
-          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
-          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
-          <div class="criterion-desc"></div>
-        </div>
-
-        <div class="criterion" data-crit="pron">
-          <div class="criterion-head">
-            <span class="crit-name">Pronunciation</span>
-            <span class="crit-band">4</span>
-          </div>
-          <input type="range" min="1" max="9" step="1" value="4" class="crit-slider">
-          <div class="criterion-scale"><span>1</span><span>3</span><span>5</span><span>7</span><span>9</span></div>
-          <div class="criterion-desc"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Nhận xét</h2>
-        <div class="small-note" style="margin-bottom:8px;">Gợi ý tự sinh từ band đã chọn + thống kê transcript. Bấm "Chèn vào ô nhận xét" rồi chỉnh sửa lại theo ý bạn.</div>
-        <div class="suggestion-box" id="suggestionBox"></div>
-        <div class="feedback-actions">
-          <button class="btn btn-sm" id="btnInsertFeedback">Chèn vào ô nhận xét</button>
-          <button class="btn btn-sm" id="btnRefreshSuggestion">Làm mới gợi ý</button>
-        </div>
-        <label class="field" style="margin-top:12px;">
-          <span style="font-size:var(--text-xs); color:var(--ink-600); font-weight:700; text-transform:uppercase;">Nhận xét cuối (gửi học viên)</span>
-        </label>
-        <textarea class="feedback-area" id="feedbackFinal" placeholder="Nhận xét chính thức của bạn sẽ ở đây..."></textarea>
-        <div class="feedback-actions">
-          <button class="btn btn-primary" id="btnExportReport">In / Xuất báo cáo (PDF)</button>
-          <button class="btn" id="btnExportCsv">Xuất CSV toàn bộ lịch sử</button>
-        </div>
-      </div>
-
     </div>
   </div>
+
+  <div class="card">
+    <h2>📝 Transcript</h2>
+    <div class="actions" style="margin-top:0; margin-bottom:10px;">
+      <label class="btn" for="transcriptFile">📄 Tải file .txt</label>
+      <input type="file" id="transcriptFile" accept=".txt,text/plain" style="display:none;">
+      <span class="small">hoặc dán/gõ trực tiếp vào ô bên dưới</span>
+    </div>
+    <textarea id="transcript" placeholder="Dán transcript vào đây, hoặc bấm 'Tải file .txt' ở trên..."></textarea>
+    <div class="stat">Số từ: <b id="wordCount">0</b> &nbsp;·&nbsp; Từ đệm (um/uh/like...): <b id="fillerCount">0</b></div>
+  </div>
+
+  <div class="card">
+    <h2>Rubric chấm điểm</h2>
+    <div class="crit" data-crit="fc">
+      <div class="crit-head"><span class="name">Fluency &amp; Coherence</span>
+        <select class="crit-select"></select></div>
+      <div class="crit-desc"></div>
+    </div>
+    <div class="crit" data-crit="lr">
+      <div class="crit-head"><span class="name">Lexical Resource</span>
+        <select class="crit-select"></select></div>
+      <div class="crit-desc"></div>
+    </div>
+    <div class="crit" data-crit="gra">
+      <div class="crit-head"><span class="name">Grammatical Range &amp; Accuracy</span>
+        <select class="crit-select"></select></div>
+      <div class="crit-desc"></div>
+    </div>
+    <div class="crit" data-crit="pron">
+      <div class="crit-head"><span class="name">Pronunciation</span>
+        <select class="crit-select"></select></div>
+      <div class="crit-desc"></div>
+    </div>
+  </div>
+
+  <div class="card overall">
+    <div class="lbl">Band điểm tổng</div>
+    <div class="num" id="overallNum">4.0</div>
+    <div class="breakdown">
+      <div><div class="l">FC</div><div class="v" id="obFC">4</div></div>
+      <div><div class="l">LR</div><div class="v" id="obLR">4</div></div>
+      <div><div class="l">GRA</div><div class="v" id="obGRA">4</div></div>
+      <div><div class="l">Pron</div><div class="v" id="obPron">4</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Nhận xét</h2>
+    <div class="actions" style="margin-top:0; margin-bottom:10px;">
+      <button class="btn" id="btnGenFeedback">✨ Tạo gợi ý nhận xét</button>
+    </div>
+    <textarea id="feedback" placeholder="Nhận xét của bạn sẽ ở đây — bấm 'Tạo gợi ý nhận xét' để có bản nháp, rồi chỉnh lại theo ý bạn."></textarea>
+  </div>
+
+  <div class="card">
+    <div class="actions" style="margin-top:0;">
+      <button class="btn btn-primary" id="btnSave">💾 Lưu bài chấm</button>
+      <button class="btn" id="btnPrint">🖨️ In / Xuất PDF</button>
+      <button class="btn" id="btnNew">+ Bài mới</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Đã lưu</h2>
+    <div id="savedList"><span class="small">Chưa có bài nào được lưu.</span></div>
+  </div>
+
 </div>
 
-<div class="drawer-backdrop" id="drawerBackdrop"></div>
-<div class="drawer" id="drawer">
-  <div class="drawer-head">
-    <h2>Lịch sử chấm</h2>
-    <button class="btn btn-ghost btn-sm" id="btnCloseDrawer">Đóng ✕</button>
-  </div>
-  <div id="historyList"></div>
+<div id="printArea">
+  <div class="pr-title">Báo cáo chấm nói IELTS</div>
+  <div class="pr-sub" id="prSub"></div>
+  <div class="pr-row"><b>Học viên:</b> <span id="prName"></span></div>
+  <div class="pr-row"><b>Ngày chấm:</b> <span id="prDate"></span></div>
+  <table class="pr-bands">
+    <tr><th>Fluency &amp; Coherence</th><th>Lexical Resource</th><th>Grammatical Range &amp; Accuracy</th><th>Pronunciation</th><th>Band tổng</th></tr>
+    <tr><td class="big" id="prFC"></td><td class="big" id="prLR"></td><td class="big" id="prGRA"></td><td class="big" id="prPron"></td><td class="big" id="prOverall"></td></tr>
+  </table>
+  <div class="pr-section">Nhận xét</div>
+  <div class="pr-text" id="prFeedback"></div>
 </div>
 
-<div id="printReport" class="print-report" aria-hidden="true"></div>
+<script>
+(function () {
+  "use strict";
 
-<script src="app.js"></script>
+  var DESCRIPTORS = {
+    fc: {
+      4: "Không thể trả lời mà không dừng lại lâu để tìm từ/ý; nói chậm, lặp lại nhiều; tự sửa lỗi liên tục; chỉ nối câu bằng liên từ cơ bản (and, but, so).",
+      5: "Duy trì được luồng nói nhưng phải dùng lặp từ, tự sửa lỗi hoặc nói chậm lại để 'câu giờ'; ý đơn giản thì trôi chảy, ý phức tạp thì bị vấp.",
+      6: "Sẵn sàng nói dài nhưng đôi lúc mất mạch lạc do lặp từ, tự sửa lỗi hoặc ngập ngừng; dùng nhiều loại từ nối nhưng không phải lúc nào cũng đúng chỗ.",
+      7: "Nói dài mà không tốn nhiều công sức, không mất mạch lạc rõ rệt; có ngập ngừng/lặp/tự sửa nhưng chủ yếu liên quan đến chọn từ/ngữ pháp, không phải nội dung.",
+      8: "Nói trôi chảy, chỉ ngập ngừng thỉnh thoảng để tìm ý (không phải tìm từ); triển khai chủ đề mạch lạc, hợp lý; dùng đa dạng từ nối linh hoạt.",
+      9: "Nói trôi chảy gần như tuyệt đối, chỉ lặp/tự sửa rất hiếm; duy trì mạch nói dài tự nhiên; ý tưởng mạch lạc, tổ chức tốt, liên kết tự nhiên và chính xác."
+    },
+    lr: {
+      4: "Vốn từ chỉ đủ nói về chủ đề quen thuộc; diễn giải (paraphrase) rất hạn chế và thường không thành công.",
+      5: "Đủ vốn từ để nói về chủ đề quen thuộc lẫn không quen thuộc nhưng thiếu linh hoạt; cố diễn giải nhưng không phải lúc nào cũng thành công.",
+      6: "Đủ vốn từ để nói dài về nhiều chủ đề, nhưng đôi khi dùng từ chưa phù hợp; diễn giải thường thành công.",
+      7: "Vốn từ đủ linh hoạt để bàn nhiều chủ đề; dùng được một số từ ít thông dụng/thành ngữ, có ý thức về collocation dù đôi chỗ chưa chuẩn.",
+      8: "Vốn từ rộng, dùng linh hoạt và chính xác; dùng khéo léo từ ít thông dụng/thành ngữ dù đôi khi còn sai nhỏ; diễn giải tự nhiên khi cần.",
+      9: "Vốn từ linh hoạt và chính xác tuyệt đối ở mọi chủ đề; dùng ngôn ngữ thành ngữ tự nhiên, tinh tế như người bản ngữ."
+    },
+    gra: {
+      4: "Kiểm soát được câu đơn cơ bản nhưng hiếm khi dùng mệnh đề phụ; lỗi xảy ra thường xuyên và có thể gây khó hiểu cho người nghe.",
+      5: "Kiểm soát khá tốt câu đơn; có thử câu phức nhưng phạm vi hạn chế, thường mắc lỗi và đôi khi phải dừng lại sửa/nói lại.",
+      6: "Kết hợp câu đơn và câu phức nhưng chưa linh hoạt; câu phức thường mắc lỗi, tuy nhiên hiếm khi gây cản trở giao tiếp.",
+      7: "Dùng linh hoạt cả câu đơn và câu phức; nhiều câu không lỗi, nhưng vẫn còn một số lỗi ngữ pháp xen kẽ.",
+      8: "Dùng đa dạng cấu trúc câu linh hoạt; phần lớn câu không có lỗi, chỉ còn vài lỗi nhỏ hoặc cách diễn đạt chưa thật tự nhiên.",
+      9: "Dùng đầy đủ các dạng cấu trúc câu tự nhiên và phù hợp; chính xác gần như tuyệt đối, chỉ có lỗi rất nhỏ kiểu người bản ngữ đôi khi mắc phải."
+    },
+    pron: {
+      4: "Dùng rất ít đặc điểm phát âm hiệu quả (trọng âm, ngữ điệu...); cố kiểm soát nhưng hay bị lỗi; phát âm sai từ thường xuyên gây khó khăn cho người nghe.",
+      5: "Có một số đặc điểm phát âm tốt nhưng chưa ổn định; phát âm sai từ/âm khá thường xuyên, người nghe vẫn theo dõi được nhìn chung.",
+      6: "Dùng được nhiều đặc điểm phát âm nhưng mức kiểm soát chưa đều; phát âm sai đôi lúc làm giảm độ rõ, nhưng nhìn chung vẫn hiểu được xuyên suốt.",
+      7: "Có hầu hết ưu điểm của band 6 và một phần ưu điểm của band 8; nhìn chung dễ hiểu dù đôi khi phát âm sai từ/âm khiến người nghe phải cố gắng.",
+      8: "Dùng hiệu quả nhiều đặc điểm phát âm, thỉnh thoảng mới có sai sót nhỏ; dễ hiểu xuyên suốt, ảnh hưởng của ngôn ngữ mẹ đẻ rất ít.",
+      9: "Dùng đầy đủ và tinh tế các đặc điểm phát âm một cách nhất quán; nghe dễ dàng, không tốn công sức của người nghe."
+    }
+  };
+  var LABELS = { fc: "Fluency & Coherence", lr: "Lexical Resource", gra: "Grammatical Range & Accuracy", pron: "Pronunciation" };
+  var FILLERS = ["um", "uh", "erm", "hmm", "you know", "i mean", "sort of", "kind of", "basically", "like", "actually", "well"];
+  var STORE_KEY = "ielts_speaking_marker_simple_v1";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var state = { id: null, studentName: "", testDate: "", transcript: "", scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, feedback: "" };
+  var audioURL = null;
+
+  // ---- Audio ----
+  $("audioFile").addEventListener("change", function (e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    if (audioURL) URL.revokeObjectURL(audioURL);
+    audioURL = URL.createObjectURL(f);
+    $("player").src = audioURL;
+    $("audioWrap").style.display = "block";
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".actions .btn[data-speed]"), function (btn) {
+    btn.addEventListener("click", function () {
+      $("player").playbackRate = parseFloat(btn.dataset.speed);
+    });
+  });
+
+  // ---- Transcript ----
+  $("transcriptFile").addEventListener("change", function (e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      $("transcript").value = ev.target.result;
+      onTranscriptChange();
+    };
+    reader.readAsText(f, "utf-8");
+  });
+
+  function onTranscriptChange() {
+    var text = $("transcript").value;
+    state.transcript = text;
+    var words = text.match(/[A-Za-zÀ-ỹ']+/g) || [];
+    $("wordCount").textContent = words.length;
+    var lower = text.toLowerCase();
+    var count = 0;
+    FILLERS.forEach(function (f) {
+      var re = new RegExp("\\b" + f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "g");
+      var m = lower.match(re);
+      if (m) count += m.length;
+    });
+    $("fillerCount").textContent = count;
+  }
+  $("transcript").addEventListener("input", onTranscriptChange);
+
+  // ---- Rubric ----
+  function roundOverall(avg) {
+    var rem = avg - Math.floor(avg);
+    if (Math.abs(rem - 0.25) < 1e-6) return Math.floor(avg) + 0.5;
+    if (Math.abs(rem - 0.75) < 1e-6) return Math.ceil(avg);
+    return Math.round(avg * 4) / 4;
+  }
+
+  var critEls = document.querySelectorAll(".crit");
+  critEls.forEach(function (critEl) {
+    var key = critEl.dataset.crit;
+    var sel = critEl.querySelector(".crit-select");
+    for (var b = 4; b <= 9; b++) {
+      var opt = document.createElement("option");
+      opt.value = b; opt.textContent = "Band " + b;
+      if (b === 4) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener("change", function () { updateAll(); });
+  });
+
+  function updateAll() {
+    var scores = {};
+    critEls.forEach(function (critEl) {
+      var key = critEl.dataset.crit;
+      var band = parseInt(critEl.querySelector(".crit-select").value, 10);
+      scores[key] = band;
+      critEl.querySelector(".crit-desc").textContent = DESCRIPTORS[key][band];
+    });
+    state.scores = scores;
+    var avg = (scores.fc + scores.lr + scores.gra + scores.pron) / 4;
+    var overall = roundOverall(avg);
+    $("overallNum").textContent = overall.toFixed(overall % 1 === 0 ? 1 : 1);
+    $("obFC").textContent = scores.fc;
+    $("obLR").textContent = scores.lr;
+    $("obGRA").textContent = scores.gra;
+    $("obPron").textContent = scores.pron;
+    return overall;
+  }
+
+  // ---- Feedback ----
+  $("btnGenFeedback").addEventListener("click", function () {
+    var overall = updateAll();
+    var s = state.scores;
+    var lines = [];
+    lines.push("BAND ĐIỂM TỔNG: " + overall);
+    lines.push("");
+    Object.keys(LABELS).forEach(function (key) {
+      lines.push(LABELS[key] + " — Band " + s[key]);
+      lines.push(DESCRIPTORS[key][s[key]]);
+      lines.push("");
+    });
+    var fillerCount = parseInt($("fillerCount").textContent, 10) || 0;
+    if (fillerCount > 8) lines.push("Lưu ý: dùng khá nhiều từ đệm (" + fillerCount + " lần) — có thể ảnh hưởng Fluency & Coherence.");
+    $("feedback").value = lines.join("\n");
+    state.feedback = $("feedback").value;
+  });
+  $("feedback").addEventListener("input", function () { state.feedback = $("feedback").value; });
+
+  // ---- Save / list / load / new ----
+  function getSaved() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (e) { return []; }
+  }
+  function setSaved(list) { localStorage.setItem(STORE_KEY, JSON.stringify(list)); }
+
+  function collect() {
+    state.studentName = $("studentName").value.trim();
+    state.testDate = $("testDate").value;
+    state.transcript = $("transcript").value;
+    state.feedback = $("feedback").value;
+    updateAll();
+  }
+
+  function renderSavedList() {
+    var list = getSaved().slice().sort(function (a, b) { return (b.savedAt || "").localeCompare(a.savedAt || ""); });
+    var wrap = $("savedList");
+    if (list.length === 0) { wrap.innerHTML = '<span class="small">Chưa có bài nào được lưu.</span>'; return; }
+    wrap.innerHTML = "";
+    list.forEach(function (item) {
+      var row = document.createElement("div");
+      row.className = "saved-item";
+      row.innerHTML = '<span class="n"></span><span class="b"></span>' +
+        '<button class="btn" data-action="open">Mở</button>' +
+        '<button class="btn btn-danger" data-action="del">Xoá</button>';
+      row.querySelector(".n").textContent = (item.studentName || "(chưa đặt tên)") + (item.testDate ? " · " + item.testDate : "");
+      row.querySelector(".b").textContent = "Band " + item.overall;
+      row.querySelector('[data-action="open"]').addEventListener("click", function () { loadItem(item.id); });
+      row.querySelector('[data-action="del"]').addEventListener("click", function () {
+        if (!confirm("Xoá bài chấm này?")) return;
+        setSaved(getSaved().filter(function (s) { return s.id !== item.id; }));
+        renderSavedList();
+      });
+      wrap.appendChild(row);
+    });
+  }
+
+  function loadItem(id) {
+    var found = getSaved().find(function (s) { return s.id === id; });
+    if (!found) return;
+    state = JSON.parse(JSON.stringify(found));
+    applyState();
+  }
+
+  function applyState() {
+    $("studentName").value = state.studentName || "";
+    $("testDate").value = state.testDate || "";
+    $("transcript").value = state.transcript || "";
+    $("feedback").value = state.feedback || "";
+    critEls.forEach(function (critEl) {
+      var key = critEl.dataset.crit;
+      critEl.querySelector(".crit-select").value = state.scores[key] || 4;
+    });
+    onTranscriptChange();
+    updateAll();
+  }
+
+  $("btnSave").addEventListener("click", function () {
+    collect();
+    if (!state.studentName) { $("studentName").focus(); alert("Nhập tên học viên trước khi lưu."); return; }
+    if (!state.id) state.id = "s_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    state.overall = updateAll();
+    state.savedAt = new Date().toISOString();
+    var list = getSaved();
+    var idx = list.findIndex(function (s) { return s.id === state.id; });
+    var toSave = JSON.parse(JSON.stringify(state));
+    if (idx >= 0) list[idx] = toSave; else list.push(toSave);
+    setSaved(list);
+    renderSavedList();
+    var btn = $("btnSave"); var orig = btn.textContent;
+    btn.textContent = "Đã lưu ✓";
+    setTimeout(function () { btn.textContent = orig; }, 1400);
+  });
+
+  $("btnNew").addEventListener("click", function () {
+    if (!confirm("Bắt đầu bài mới? Dữ liệu chưa lưu sẽ mất.")) return;
+    state = { id: null, studentName: "", testDate: "", transcript: "", scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, feedback: "" };
+    if (audioURL) { URL.revokeObjectURL(audioURL); audioURL = null; }
+    $("player").src = "";
+    $("audioWrap").style.display = "none";
+    $("audioFile").value = "";
+    applyState();
+  });
+
+  // ---- Print ----
+  $("btnPrint").addEventListener("click", function () {
+    collect();
+    var overall = updateAll();
+    $("prSub").textContent = "Ngày xuất báo cáo: " + new Date().toLocaleString("vi-VN");
+    $("prName").textContent = state.studentName || "—";
+    $("prDate").textContent = state.testDate || "—";
+    $("prFC").textContent = state.scores.fc;
+    $("prLR").textContent = state.scores.lr;
+    $("prGRA").textContent = state.scores.gra;
+    $("prPron").textContent = state.scores.pron;
+    $("prOverall").textContent = overall;
+    $("prFeedback").textContent = state.feedback || "(chưa có nhận xét)";
+    window.print();
+  });
+
+  // ---- Init ----
+  $("testDate").valueAsDate = new Date();
+  applyState();
+  renderSavedList();
+})();
+</script>
 </body>
 </html>
