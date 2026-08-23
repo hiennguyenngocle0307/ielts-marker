@@ -17,12 +17,13 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--paper-tint); color: var(--ink-900);
     font-family: 'Segoe UI', Inter, system-ui, sans-serif; line-height: 1.5; }
-  .wrap { max-width: 900px; margin: 0 auto; padding: 20px 18px 60px; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 20px 18px 60px; }
   h1 { font-size: 1.4rem; margin: 0 0 2px; }
   .sub { color: var(--ink-600); font-size: 0.85rem; margin-bottom: 18px; }
   .card { background: var(--paper); border: 2px solid var(--line); border-radius: var(--radius);
     padding: 18px 20px; margin-bottom: 16px; }
   .card h2 { font-size: 1rem; margin: 0 0 12px; }
+  .card .hint { font-size: 0.78rem; color: var(--ink-300); margin: -6px 0 12px; }
   .row { display: flex; gap: 12px; flex-wrap: wrap; }
   .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
   .field label { font-size: 0.75rem; color: var(--ink-600); font-weight: 700; }
@@ -45,20 +46,21 @@
   .stat { font-size: 0.85rem; color: var(--ink-600); margin-top: 8px; }
   .stat b { color: var(--blue-700); }
 
-  .crit { border: 2px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
-  .crit-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 10px; }
-  .crit-head .name { font-weight: 700; font-size: 0.9rem; }
-  .crit-head select { width: auto; min-width: 70px; font-weight: 700; color: var(--blue-700); }
-  .crit-desc { font-size: 0.83rem; color: var(--ink-600); background: var(--paper-tint);
-    border-radius: 8px; padding: 8px 10px; border-left: 3px solid var(--blue-500); }
-
-  .overall { text-align: center; }
-  .overall .num { font-size: 3rem; font-weight: 800; color: var(--blue-700); line-height: 1; }
-  .overall .lbl { font-size: 0.8rem; color: var(--ink-600); }
-  .breakdown { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 14px; }
-  .breakdown div { background: var(--paper-tint); border: 1px solid var(--line); border-radius: 8px; padding: 8px 4px; }
-  .breakdown .l { font-size: 0.6rem; color: var(--ink-600); text-transform: uppercase; }
-  .breakdown .v { font-weight: 800; color: var(--blue-700); font-size: 1.1rem; }
+  /* ---- Rubric table (matches "PHIẾU CHẤM CỦA CÔ") ---- */
+  table.rubric { width: 100%; border-collapse: collapse; }
+  table.rubric th, table.rubric td { border: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; font-size: 0.85rem; }
+  table.rubric th { background: var(--paper-tint); font-size: 0.72rem; text-transform: uppercase; color: var(--ink-600); }
+  table.rubric td.crit-name { font-weight: 700; white-space: nowrap; }
+  table.rubric select.band-select { font-weight: 800; color: var(--blue-700); width: auto; min-width: 80px; }
+  table.rubric textarea.evidence { min-height: 64px; font-size: 0.83rem; }
+  .metric-grid { display: flex; flex-direction: column; gap: 6px; min-width: 190px; }
+  .metric-grid .m { display: flex; align-items: center; gap: 6px; }
+  .metric-grid .m label { font-size: 0.72rem; color: var(--ink-600); flex: 1; }
+  .metric-grid .m input { width: 64px; padding: 5px 8px; font-size: 0.8rem; text-align: center; }
+  tr.total td { background: var(--yellow-50); font-weight: 800; }
+  tr.total .formula { font-size: 0.78rem; color: var(--ink-600); font-weight: 400; }
+  tr.total .num { font-size: 1.4rem; color: var(--yellow-700); }
+  .crit-desc { font-size: 0.8rem; color: var(--ink-600); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
 
   .saved-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
     border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; }
@@ -70,15 +72,19 @@
     body * { visibility: hidden; }
     #printArea, #printArea * { visibility: visible; }
     #printArea { position: absolute; top: 0; left: 0; width: 100%; padding: 20px; }
-    .pr-title { font-size: 20pt; font-weight: 800; margin-bottom: 4px; }
-    .pr-sub { font-size: 10pt; color: #555; margin-bottom: 16px; }
-    .pr-row { display: flex; gap: 24px; margin-bottom: 4px; font-size: 10.5pt; }
-    .pr-row b { min-width: 90px; display: inline-block; }
-    .pr-bands { width: 100%; border-collapse: collapse; margin: 14px 0; }
-    .pr-bands th, .pr-bands td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 10pt; }
-    .pr-bands td.big { font-size: 16pt; font-weight: 800; }
-    .pr-section { font-weight: 800; font-size: 12pt; margin: 16px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
-    .pr-text { white-space: pre-wrap; font-size: 10.5pt; border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
+    .pr-title { font-size: 18pt; font-weight: 800; margin-bottom: 2px; }
+    .pr-sub2 { font-size: 10pt; color: #555; margin-bottom: 4px; }
+    .pr-sub { font-size: 9pt; color: #777; margin-bottom: 14px; }
+    .pr-row { display: flex; gap: 20px; margin-bottom: 3px; font-size: 10pt; flex-wrap: wrap; }
+    .pr-row b { min-width: 80px; display: inline-block; }
+    table.pr-rubric { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    table.pr-rubric th, table.pr-rubric td { border: 1px solid #999; padding: 6px 8px; font-size: 9pt; text-align: left; vertical-align: top; }
+    table.pr-rubric th { background: #eee; font-size: 8pt; text-transform: uppercase; }
+    table.pr-rubric td.band { font-size: 13pt; font-weight: 800; text-align: center; }
+    table.pr-rubric tr.total td { background: #fff6d9; font-weight: 800; font-size: 12pt; }
+    .pr-section { font-weight: 800; font-size: 11.5pt; margin: 16px 0 6px; border-bottom: 1px solid #999; padding-bottom: 3px; }
+    .pr-text { white-space: pre-wrap; font-size: 10pt; border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
+    .page-break { page-break-before: always; }
   }
   #printArea { display: none; }
 </style>
@@ -87,7 +93,7 @@
 <div class="wrap">
 
   <h1>IELTS Speaking Marker</h1>
-  <div class="sub">Chấm nói IELTS theo rubric 4 tiêu chí — 1 file, mở là dùng, không cần cài gì.</div>
+  <div class="sub">Chấm nói IELTS theo phiếu chấm 4 tiêu chí — 1 file, mở là dùng, không cần cài gì.</div>
 
   <div class="card">
     <div class="row">
@@ -96,8 +102,16 @@
         <input type="text" id="studentName" placeholder="Tên học viên">
       </div>
       <div class="field">
-        <label for="testDate">Ngày chấm</label>
+        <label for="testDate">Ngày</label>
         <input type="date" id="testDate">
+      </div>
+      <div class="field">
+        <label for="mockNumber">Mock số</label>
+        <input type="text" id="mockNumber" placeholder="VD: 1, 2, 3, 4">
+      </div>
+      <div class="field">
+        <label for="part2Topic">Chủ đề Part 2</label>
+        <input type="text" id="part2Topic" placeholder="VD: Describe a person you admire">
       </div>
     </div>
   </div>
@@ -127,37 +141,72 @@
   </div>
 
   <div class="card">
-    <h2>Rubric chấm điểm</h2>
-    <div class="crit" data-crit="fc">
-      <div class="crit-head"><span class="name">Fluency &amp; Coherence</span>
-        <select class="crit-select"></select></div>
-      <div class="crit-desc"></div>
-    </div>
-    <div class="crit" data-crit="lr">
-      <div class="crit-head"><span class="name">Lexical Resource</span>
-        <select class="crit-select"></select></div>
-      <div class="crit-desc"></div>
-    </div>
-    <div class="crit" data-crit="gra">
-      <div class="crit-head"><span class="name">Grammatical Range &amp; Accuracy</span>
-        <select class="crit-select"></select></div>
-      <div class="crit-desc"></div>
-    </div>
-    <div class="crit" data-crit="pron">
-      <div class="crit-head"><span class="name">Pronunciation</span>
-        <select class="crit-select"></select></div>
-      <div class="crit-desc"></div>
-    </div>
-  </div>
+    <h2>Phiếu chấm — 4 tiêu chí</h2>
+    <div class="hint">Điền Band, trích dẫn bằng chứng cụ thể (lời em nói) và các con số đo được cho từng tiêu chí — đúng cấu trúc phiếu chấm giấy.</div>
+    <div style="overflow-x:auto;">
+    <table class="rubric">
+      <tr>
+        <th style="width:120px;">Tiêu chí</th>
+        <th style="width:90px;">Band</th>
+        <th>Bằng chứng cụ thể (trích lời em nói)</th>
+        <th style="width:210px;">Con số đo được</th>
+      </tr>
 
-  <div class="card overall">
-    <div class="lbl">Band điểm tổng</div>
-    <div class="num" id="overallNum">4.0</div>
-    <div class="breakdown">
-      <div><div class="l">FC</div><div class="v" id="obFC">4</div></div>
-      <div><div class="l">LR</div><div class="v" id="obLR">4</div></div>
-      <div><div class="l">GRA</div><div class="v" id="obGRA">4</div></div>
-      <div><div class="l">Pron</div><div class="v" id="obPron">4</div></div>
+      <tr class="crit-row" data-crit="fc">
+        <td class="crit-name">Fluency &amp; Coherence</td>
+        <td><select class="band-select"></select></td>
+        <td><textarea class="evidence" data-field="evidence"></textarea><div class="crit-desc"></div></td>
+        <td>
+          <div class="metric-grid">
+            <div class="m"><label>P1 (giây/câu)</label><input type="text" data-metric="p1"></div>
+            <div class="m"><label>P2 (giây)</label><input type="text" data-metric="p2"></div>
+            <div class="m"><label>Pause &gt;3s (lần)</label><input type="text" data-metric="pauses"></div>
+          </div>
+        </td>
+      </tr>
+
+      <tr class="crit-row" data-crit="lr">
+        <td class="crit-name">Lexical Resource</td>
+        <td><select class="band-select"></select></td>
+        <td><textarea class="evidence" data-field="evidence"></textarea><div class="crit-desc"></div></td>
+        <td>
+          <div class="metric-grid">
+            <div class="m"><label>Từ band 7 dùng</label><input type="text" data-metric="band7"></div>
+            <div class="m"><label>Từ lặp &gt;2 lần</label><input type="text" data-metric="repeated"></div>
+          </div>
+        </td>
+      </tr>
+
+      <tr class="crit-row" data-crit="gra">
+        <td class="crit-name">Grammatical Range</td>
+        <td><select class="band-select"></select></td>
+        <td><textarea class="evidence" data-field="evidence"></textarea><div class="crit-desc"></div></td>
+        <td>
+          <div class="metric-grid">
+            <div class="m"><label>Câu phức</label><input type="text" data-metric="complex"></div>
+            <div class="m"><label>Lỗi hệ thống</label><input type="text" data-metric="errors"></div>
+          </div>
+        </td>
+      </tr>
+
+      <tr class="crit-row" data-crit="pron">
+        <td class="crit-name">Pronunciation</td>
+        <td><select class="band-select"></select></td>
+        <td><textarea class="evidence" data-field="evidence"></textarea><div class="crit-desc"></div></td>
+        <td>
+          <div class="metric-grid">
+            <div class="m"><label>Âm cuối rơi</label><input type="text" data-metric="dropped"></div>
+            <div class="m"><label>Trọng âm sai</label><input type="text" data-metric="stress"></div>
+            <div class="m"><label>Ngữ điệu (ghi chú)</label><input type="text" data-metric="intonation" style="width:100px;"></div>
+          </div>
+        </td>
+      </tr>
+
+      <tr class="total">
+        <td colspan="2">BAND TỔNG</td>
+        <td colspan="2"><span class="num" id="overallNum">4.0</span> &nbsp; <span class="formula">(FC + LR + GRA + P) ÷ 4 = <span id="formulaText"></span></span></td>
+      </tr>
+    </table>
     </div>
   </div>
 
@@ -167,6 +216,20 @@
       <button class="btn" id="btnGenFeedback">✨ Tạo gợi ý nhận xét</button>
     </div>
     <textarea id="feedback" placeholder="Nhận xét của bạn sẽ ở đây — bấm 'Tạo gợi ý nhận xét' để có bản nháp, rồi chỉnh lại theo ý bạn."></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Gợi ý cải thiện &amp; luyện tập</h2>
+    <div class="actions" style="margin-top:0; margin-bottom:10px;">
+      <button class="btn" id="btnGenImprovement">✨ Tạo gợi ý luyện tập</button>
+    </div>
+    <textarea id="improvement" placeholder="Bài tập luyện tập cụ thể theo từng tiêu chí sẽ ở đây — bấm nút ở trên để có bản nháp theo band đã chọn."></textarea>
+  </div>
+
+  <div class="card">
+    <h2>Bản chỉnh sửa mẫu — hướng tới Band 7.5</h2>
+    <div class="hint">Viết lại/nâng cấp một vài câu tiêu biểu trong bài nói gốc theo hướng band 7.5, để em đối chiếu trực tiếp "trước → sau".</div>
+    <textarea id="rewrite75" placeholder="VD: 'I go to school by bus' → 'I usually commute to school by bus, which takes around twenty minutes.'"></textarea>
   </div>
 
   <div class="card">
@@ -185,16 +248,41 @@
 </div>
 
 <div id="printArea">
-  <div class="pr-title">Báo cáo chấm nói IELTS</div>
+  <div class="pr-title">PHIẾU CHẤM CỦA CÔ</div>
+  <div class="pr-sub2" id="prTopic"></div>
   <div class="pr-sub" id="prSub"></div>
   <div class="pr-row"><b>Học viên:</b> <span id="prName"></span></div>
-  <div class="pr-row"><b>Ngày chấm:</b> <span id="prDate"></span></div>
-  <table class="pr-bands">
-    <tr><th>Fluency &amp; Coherence</th><th>Lexical Resource</th><th>Grammatical Range &amp; Accuracy</th><th>Pronunciation</th><th>Band tổng</th></tr>
-    <tr><td class="big" id="prFC"></td><td class="big" id="prLR"></td><td class="big" id="prGRA"></td><td class="big" id="prPron"></td><td class="big" id="prOverall"></td></tr>
+  <div class="pr-row"><b>Ngày:</b> <span id="prDate"></span> &nbsp; <b>Mock số:</b> <span id="prMock"></span></div>
+
+  <table class="pr-rubric">
+    <tr><th style="width:16%;">Tiêu chí</th><th style="width:8%;">Band</th><th style="width:44%;">Bằng chứng cụ thể</th><th style="width:32%;">Con số đo được</th></tr>
+    <tr>
+      <td>Fluency &amp; Coherence</td><td class="band" id="prFC"></td>
+      <td id="prEvFC"></td><td id="prMetFC"></td>
+    </tr>
+    <tr>
+      <td>Lexical Resource</td><td class="band" id="prLR"></td>
+      <td id="prEvLR"></td><td id="prMetLR"></td>
+    </tr>
+    <tr>
+      <td>Grammatical Range</td><td class="band" id="prGRA"></td>
+      <td id="prEvGRA"></td><td id="prMetGRA"></td>
+    </tr>
+    <tr>
+      <td>Pronunciation</td><td class="band" id="prPron"></td>
+      <td id="prEvPron"></td><td id="prMetPron"></td>
+    </tr>
+    <tr class="total"><td colspan="2">BAND TỔNG</td><td colspan="2" id="prOverall"></td></tr>
   </table>
+
   <div class="pr-section">Nhận xét</div>
   <div class="pr-text" id="prFeedback"></div>
+
+  <div class="pr-section">Gợi ý cải thiện &amp; luyện tập</div>
+  <div class="pr-text" id="prImprovement"></div>
+
+  <div class="pr-section">Bản chỉnh sửa mẫu — hướng tới Band 7.5</div>
+  <div class="pr-text" id="prRewrite"></div>
 </div>
 
 <script>
@@ -236,12 +324,51 @@
     }
   };
   var LABELS = { fc: "Fluency & Coherence", lr: "Lexical Resource", gra: "Grammatical Range & Accuracy", pron: "Pronunciation" };
+  var METRIC_KEYS = { fc: ["p1", "p2", "pauses"], lr: ["band7", "repeated"], gra: ["complex", "errors"], pron: ["dropped", "stress", "intonation"] };
+  var METRIC_LABELS = {
+    p1: "P1", p2: "P2", pauses: "Pause>3s",
+    band7: "Từ band 7", repeated: "Từ lặp>2",
+    complex: "Câu phức", errors: "Lỗi hệ thống",
+    dropped: "Âm cuối rơi", stress: "Trọng âm sai", intonation: "Ngữ điệu"
+  };
+  var PRACTICE = {
+    fc: {
+      low: "Luyện nói 1 phút liên tục về chủ đề quen thuộc (bấm giờ), không dừng lại sửa lỗi giữa chừng — ưu tiên giữ mạch nói trước. Ghi âm lại, đếm số lần dừng >3 giây.",
+      mid: "Luyện dùng đa dạng từ nối ngoài 'and/but/so' (VD: what's more, having said that, as a result). Tập nói đoạn Part 2 đủ 2 phút không nhìn giấy.",
+      high: "Luyện mở rộng ý sâu hơn ở Part 3 — thêm ví dụ cụ thể, so sánh, phản biện quan điểm ngược lại thay vì chỉ trả lời trực tiếp."
+    },
+    lr: {
+      low: "Học 10 từ vựng/tuần theo cụm (collocation), không học từ đơn lẻ. Tập paraphrase câu hỏi bằng từ đồng nghĩa trước khi trả lời.",
+      mid: "Thay tính từ cơ bản (good/nice/bad) bằng từ mạnh hơn (outstanding/delightful/awful). Ghi lại 5 collocation mới dùng được trong bài nói tuần này.",
+      high: "Luyện dùng thành ngữ/idiom tự nhiên đúng ngữ cảnh — chỉ 1-2 lần/bài để nghe tự nhiên, không lạm dụng."
+    },
+    gra: {
+      low: "Viết lại 10 câu vừa nói ra giấy, tự kiểm tra chia động từ đúng ngôi/thì trước khi nói lại.",
+      mid: "Luyện câu phức có kiểm soát: dùng mệnh đề quan hệ (which/who/that) và câu điều kiện trong câu trả lời Part 3.",
+      high: "Luyện đa dạng thì hiếm gặp (perfect continuous, mixed conditionals) để tránh lặp cấu trúc câu."
+    },
+    pron: {
+      low: "Luyện âm cuối -s/-ed: đọc to danh sách từ có âm cuối, ghi âm và so sánh với từ điển phát âm (VD Cambridge Dictionary online).",
+      mid: "Luyện trọng âm từ đa âm tiết — tra trọng âm chuẩn trước khi học từ mới, đánh dấu trọng âm trong vở.",
+      high: "Luyện ngữ điệu tự nhiên khi kể chuyện (Part 2) — lên giọng ở điểm nhấn, xuống giọng cuối câu; shadowing theo người bản ngữ 10 phút/ngày."
+    }
+  };
   var FILLERS = ["um", "uh", "erm", "hmm", "you know", "i mean", "sort of", "kind of", "basically", "like", "actually", "well"];
-  var STORE_KEY = "ielts_speaking_marker_simple_v1";
+  var STORE_KEY = "ielts_speaking_marker_v2";
 
   var $ = function (id) { return document.getElementById(id); };
+  function practiceTier(band) { return band <= 5 ? "low" : (band <= 7 ? "mid" : "high"); }
 
-  var state = { id: null, studentName: "", testDate: "", transcript: "", scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, feedback: "" };
+  function emptyMetrics() {
+    return { fc: { p1: "", p2: "", pauses: "" }, lr: { band7: "", repeated: "" }, gra: { complex: "", errors: "" }, pron: { dropped: "", stress: "", intonation: "" } };
+  }
+  var state = {
+    id: null, studentName: "", testDate: "", mockNumber: "", part2Topic: "", transcript: "",
+    scores: { fc: 4, lr: 4, gra: 4, pron: 4 },
+    evidence: { fc: "", lr: "", gra: "", pron: "" },
+    metrics: emptyMetrics(),
+    feedback: "", improvement: "", rewrite75: ""
+  };
   var audioURL = null;
 
   // ---- Audio ----
@@ -287,7 +414,7 @@
   }
   $("transcript").addEventListener("input", onTranscriptChange);
 
-  // ---- Rubric ----
+  // ---- Rubric table ----
   function roundOverall(avg) {
     var rem = avg - Math.floor(avg);
     if (Math.abs(rem - 0.25) < 1e-6) return Math.floor(avg) + 0.5;
@@ -295,35 +422,35 @@
     return Math.round(avg * 4) / 4;
   }
 
-  var critEls = document.querySelectorAll(".crit");
-  critEls.forEach(function (critEl) {
-    var key = critEl.dataset.crit;
-    var sel = critEl.querySelector(".crit-select");
+  var critRows = document.querySelectorAll(".crit-row");
+  critRows.forEach(function (row) {
+    var sel = row.querySelector(".band-select");
     for (var b = 4; b <= 9; b++) {
       var opt = document.createElement("option");
       opt.value = b; opt.textContent = "Band " + b;
       if (b === 4) opt.selected = true;
       sel.appendChild(opt);
     }
-    sel.addEventListener("change", function () { updateAll(); });
+    sel.addEventListener("change", updateAll);
+    row.querySelector(".evidence").addEventListener("input", function () { collect(); });
+    row.querySelectorAll("[data-metric]").forEach(function (inp) {
+      inp.addEventListener("input", function () { collect(); });
+    });
   });
 
   function updateAll() {
     var scores = {};
-    critEls.forEach(function (critEl) {
-      var key = critEl.dataset.crit;
-      var band = parseInt(critEl.querySelector(".crit-select").value, 10);
+    critRows.forEach(function (row) {
+      var key = row.dataset.crit;
+      var band = parseInt(row.querySelector(".band-select").value, 10);
       scores[key] = band;
-      critEl.querySelector(".crit-desc").textContent = DESCRIPTORS[key][band];
+      row.querySelector(".crit-desc").textContent = DESCRIPTORS[key][band];
     });
     state.scores = scores;
     var avg = (scores.fc + scores.lr + scores.gra + scores.pron) / 4;
     var overall = roundOverall(avg);
-    $("overallNum").textContent = overall.toFixed(overall % 1 === 0 ? 1 : 1);
-    $("obFC").textContent = scores.fc;
-    $("obLR").textContent = scores.lr;
-    $("obGRA").textContent = scores.gra;
-    $("obPron").textContent = scores.pron;
+    $("overallNum").textContent = overall.toFixed(1);
+    $("formulaText").textContent = "(" + scores.fc + "+" + scores.lr + "+" + scores.gra + "+" + scores.pron + ")÷4 = " + overall.toFixed(2);
     return overall;
   }
 
@@ -337,6 +464,8 @@
     Object.keys(LABELS).forEach(function (key) {
       lines.push(LABELS[key] + " — Band " + s[key]);
       lines.push(DESCRIPTORS[key][s[key]]);
+      var evText = document.querySelector('.crit-row[data-crit="' + key + '"] .evidence').value.trim();
+      if (evText) lines.push("Bằng chứng: " + evText);
       lines.push("");
     });
     var fillerCount = parseInt($("fillerCount").textContent, 10) || 0;
@@ -345,6 +474,24 @@
     state.feedback = $("feedback").value;
   });
   $("feedback").addEventListener("input", function () { state.feedback = $("feedback").value; });
+
+  // ---- Improvement / practice ----
+  $("btnGenImprovement").addEventListener("click", function () {
+    var s = state.scores;
+    var lines = [];
+    lines.push("GỢI Ý LUYỆN TẬP THEO TỪNG TIÊU CHÍ:");
+    Object.keys(LABELS).forEach(function (key) {
+      lines.push("");
+      lines.push(LABELS[key] + " (Band " + s[key] + "):");
+      lines.push("- " + PRACTICE[key][practiceTier(s[key])]);
+    });
+    $("improvement").value = lines.join("\n");
+    state.improvement = $("improvement").value;
+  });
+  $("improvement").addEventListener("input", function () { state.improvement = $("improvement").value; });
+  $("rewrite75").addEventListener("input", function () { state.rewrite75 = $("rewrite75").value; });
+  $("mockNumber").addEventListener("input", function () { state.mockNumber = $("mockNumber").value; });
+  $("part2Topic").addEventListener("input", function () { state.part2Topic = $("part2Topic").value; });
 
   // ---- Save / list / load / new ----
   function getSaved() {
@@ -355,8 +502,22 @@
   function collect() {
     state.studentName = $("studentName").value.trim();
     state.testDate = $("testDate").value;
+    state.mockNumber = $("mockNumber").value.trim();
+    state.part2Topic = $("part2Topic").value.trim();
     state.transcript = $("transcript").value;
     state.feedback = $("feedback").value;
+    state.improvement = $("improvement").value;
+    state.rewrite75 = $("rewrite75").value;
+    var evidence = {}, metrics = emptyMetrics();
+    critRows.forEach(function (row) {
+      var key = row.dataset.crit;
+      evidence[key] = row.querySelector(".evidence").value;
+      row.querySelectorAll("[data-metric]").forEach(function (inp) {
+        metrics[key][inp.dataset.metric] = inp.value;
+      });
+    });
+    state.evidence = evidence;
+    state.metrics = metrics;
     updateAll();
   }
 
@@ -371,7 +532,8 @@
       row.innerHTML = '<span class="n"></span><span class="b"></span>' +
         '<button class="btn" data-action="open">Mở</button>' +
         '<button class="btn btn-danger" data-action="del">Xoá</button>';
-      row.querySelector(".n").textContent = (item.studentName || "(chưa đặt tên)") + (item.testDate ? " · " + item.testDate : "");
+      row.querySelector(".n").textContent = (item.studentName || "(chưa đặt tên)") +
+        (item.mockNumber ? " · Mock " + item.mockNumber : "") + (item.testDate ? " · " + item.testDate : "");
       row.querySelector(".b").textContent = "Band " + item.overall;
       row.querySelector('[data-action="open"]').addEventListener("click", function () { loadItem(item.id); });
       row.querySelector('[data-action="del"]').addEventListener("click", function () {
@@ -387,17 +549,27 @@
     var found = getSaved().find(function (s) { return s.id === id; });
     if (!found) return;
     state = JSON.parse(JSON.stringify(found));
+    if (!state.metrics) state.metrics = emptyMetrics();
+    if (!state.evidence) state.evidence = { fc: "", lr: "", gra: "", pron: "" };
     applyState();
   }
 
   function applyState() {
     $("studentName").value = state.studentName || "";
     $("testDate").value = state.testDate || "";
+    $("mockNumber").value = state.mockNumber || "";
+    $("part2Topic").value = state.part2Topic || "";
     $("transcript").value = state.transcript || "";
     $("feedback").value = state.feedback || "";
-    critEls.forEach(function (critEl) {
-      var key = critEl.dataset.crit;
-      critEl.querySelector(".crit-select").value = state.scores[key] || 4;
+    $("improvement").value = state.improvement || "";
+    $("rewrite75").value = state.rewrite75 || "";
+    critRows.forEach(function (row) {
+      var key = row.dataset.crit;
+      row.querySelector(".band-select").value = state.scores[key] || 4;
+      row.querySelector(".evidence").value = (state.evidence && state.evidence[key]) || "";
+      row.querySelectorAll("[data-metric]").forEach(function (inp) {
+        inp.value = (state.metrics && state.metrics[key] && state.metrics[key][inp.dataset.metric]) || "";
+      });
     });
     onTranscriptChange();
     updateAll();
@@ -422,7 +594,11 @@
 
   $("btnNew").addEventListener("click", function () {
     if (!confirm("Bắt đầu bài mới? Dữ liệu chưa lưu sẽ mất.")) return;
-    state = { id: null, studentName: "", testDate: "", transcript: "", scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, feedback: "" };
+    state = {
+      id: null, studentName: "", testDate: "", mockNumber: "", part2Topic: "", transcript: "",
+      scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, evidence: { fc: "", lr: "", gra: "", pron: "" },
+      metrics: emptyMetrics(), feedback: "", improvement: "", rewrite75: ""
+    };
     if (audioURL) { URL.revokeObjectURL(audioURL); audioURL = null; }
     $("player").src = "";
     $("audioWrap").style.display = "none";
@@ -431,18 +607,41 @@
   });
 
   // ---- Print ----
+  function fmtMetrics(key) {
+    return METRIC_KEYS[key].map(function (m) {
+      var v = (state.metrics[key] && state.metrics[key][m]) || "—";
+      return METRIC_LABELS[m] + ": " + v;
+    }).join(" · ");
+  }
+
   $("btnPrint").addEventListener("click", function () {
     collect();
     var overall = updateAll();
+    $("prTopic").textContent = state.part2Topic ? "Chủ đề Part 2: " + state.part2Topic : "";
     $("prSub").textContent = "Ngày xuất báo cáo: " + new Date().toLocaleString("vi-VN");
     $("prName").textContent = state.studentName || "—";
     $("prDate").textContent = state.testDate || "—";
+    $("prMock").textContent = state.mockNumber || "—";
+
     $("prFC").textContent = state.scores.fc;
     $("prLR").textContent = state.scores.lr;
     $("prGRA").textContent = state.scores.gra;
     $("prPron").textContent = state.scores.pron;
-    $("prOverall").textContent = overall;
+    $("prOverall").textContent = overall + "   (" + state.scores.fc + "+" + state.scores.lr + "+" + state.scores.gra + "+" + state.scores.pron + ") ÷ 4";
+
+    $("prEvFC").textContent = state.evidence.fc || "—";
+    $("prEvLR").textContent = state.evidence.lr || "—";
+    $("prEvGRA").textContent = state.evidence.gra || "—";
+    $("prEvPron").textContent = state.evidence.pron || "—";
+
+    $("prMetFC").textContent = fmtMetrics("fc");
+    $("prMetLR").textContent = fmtMetrics("lr");
+    $("prMetGRA").textContent = fmtMetrics("gra");
+    $("prMetPron").textContent = fmtMetrics("pron");
+
     $("prFeedback").textContent = state.feedback || "(chưa có nhận xét)";
+    $("prImprovement").textContent = state.improvement || "(chưa có gợi ý luyện tập)";
+    $("prRewrite").textContent = state.rewrite75 || "(chưa có bản chỉnh sửa mẫu)";
     window.print();
   });
 
