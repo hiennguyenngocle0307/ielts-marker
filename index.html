@@ -121,16 +121,33 @@
         <textarea class="transcript-area" id="transcript" placeholder="Dán transcript bạn vừa nghe/gõ lại vào đây..."></textarea>
 
         <div class="stats-row" id="statsRow"></div>
+      </div>
 
-        <div class="preview-toggle">
-          <button class="btn btn-sm" id="btnPreview">Xem highlight tín hiệu (từ đệm / câu quá dài)</button>
-        </div>
-        <div class="highlight-preview" id="highlightPreview"></div>
+      <div class="card">
+        <h2>🔍 Phân tích lỗi tự động <span class="badge" id="issueCountBadge">0 lỗi</span></h2>
+        <div class="small-note" style="margin-bottom:10px;">Tự động chạy khi bạn dán/sửa transcript — phát hiện ngữ pháp, từ vựng/collocation và câu quá dài dựa trên các mẫu lỗi phổ biến. Đây là <b>gợi ý phát hiện tự động</b>, không phải AI hiểu ngữ nghĩa hoàn toàn — luôn kiểm tra lại trước khi dùng.</div>
+
         <div class="legend">
-          <span><span class="dot warn"></span> Từ đệm / lặp từ — có thể ảnh hưởng Fluency &amp; Coherence</span>
-          <span><span class="dot note"></span> Câu dài &gt;25 từ — kiểm tra mạch lạc &amp; ngữ pháp</span>
+          <span><span class="dot" style="background:var(--blue-500); border-radius:0; height:2px; width:14px; align-self:center;"></span> Gạch chân = lỗi Ngữ pháp</span>
+          <span><span class="dot" style="background:var(--pink-100); border:1px solid var(--pink-500);"></span> Highlight = lỗi Từ vựng/Collocation</span>
+          <span><span class="dot" style="background:transparent; border:2px solid var(--ink-300);"></span> Khung viền = câu quá dài/cấu trúc rối</span>
+          <span><b style="font-size:11px;">Đậm</b> = từ/cụm sai chính xác</span>
         </div>
-        <div class="small-note">Đây là gợi ý tự động dựa trên từ khóa, không thay thế đánh giá của giáo viên.</div>
+
+        <div class="ann-layout">
+          <div class="ann-main" id="annotatedTranscript">
+            <span class="empty-hint">Dán transcript ở trên để xem phân tích.</span>
+          </div>
+          <div class="ann-side">
+            <div class="ann-side-title">💡 Gợi ý sửa</div>
+            <div id="suggestionPanel"><span class="empty-hint">Chưa có gợi ý.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Bảng tổng hợp phân tích lỗi</h2>
+        <div id="errorTable"><span class="empty-hint">Chưa có dữ liệu — dán transcript và/hoặc nghe + ghi lỗi phát âm.</span></div>
       </div>
 
     </div>

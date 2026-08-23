@@ -121,8 +121,10 @@
     transcript: $("#transcript"),
     wordCountBadge: $("#wordCountBadge"),
     statsRow: $("#statsRow"),
-    btnPreview: $("#btnPreview"),
-    highlightPreview: $("#highlightPreview"),
+    issueCountBadge: $("#issueCountBadge"),
+    annotatedTranscript: $("#annotatedTranscript"),
+    suggestionPanel: $("#suggestionPanel"),
+    errorTable: $("#errorTable"),
     ringFill: $("#ringFill"),
     overallNumber: $("#overallNumber"),
     obFC: $("#obFC"), obLR: $("#obLR"), obGRA: $("#obGRA"), obPron: $("#obPron"),
@@ -229,6 +231,8 @@
     renderFlags();
     renderTimeline();
     renderErrorSummary();
+    renderErrorTable();
+    applyAutoBandSuggestions();
   });
 
   function renderErrorSummary() {
@@ -273,6 +277,8 @@
       renderFlags();
       renderTimeline();
       renderErrorSummary();
+      renderErrorTable();
+      applyAutoBandSuggestions();
     }
   });
 
@@ -293,6 +299,39 @@
       const title = `${fmtTime(f.time)} · ${cat.label}: ${f.heard}`;
       return `<div class="timeline-marker cat-${f.category}" style="left:${pct}%" title="${escapeHtml(title)}" data-time="${f.time}"></div>`;
     }).join("");
+  }
+
+  function renderErrorTable() {
+    const counts = { pron: 0, into: 0, vocab: 0, gram: 0 };
+    const examples = { pron: null, into: null, vocab: null, gram: null };
+    state.flags.forEach((f) => {
+      if (counts[f.category] != null) counts[f.category]++;
+      if (!examples[f.category]) examples[f.category] = f.heard;
+    });
+    lastAutoIssues.forEach((iss) => {
+      const cat = iss.category === "structure" ? "gram" : iss.category;
+      if (counts[cat] != null) counts[cat]++;
+      if (!examples[cat]) examples[cat] = iss.matchText;
+    });
+    const total = counts.pron + counts.into + counts.vocab + counts.gram;
+    if (total === 0) {
+      el.errorTable.innerHTML = '<span class="empty-hint">Chưa có dữ liệu — dán transcript và/hoặc nghe + ghi lỗi phát âm.</span>';
+      return;
+    }
+    const rows = CAT_ORDER.map((c) => `
+      <tr>
+        <td>${CATS[c].icon} ${CATS[c].label}</td>
+        <td class="et-count">${counts[c]}</td>
+        <td>${examples[c] ? `"${escapeHtml(examples[c])}"` : "—"}</td>
+        <td>${escapeHtml(REMEDIATION[c])}</td>
+      </tr>`).join("");
+    el.errorTable.innerHTML = `
+      <div class="error-table-wrap">
+        <table class="error-table">
+          <tr><th>Loại lỗi</th><th>Số lượng</th><th>Ví dụ tiêu biểu</th><th>Hướng khắc phục</th></tr>
+          ${rows}
+        </table>
+      </div>`;
   }
 
   el.timeline.addEventListener("click", (e) => {
@@ -373,45 +412,313 @@
     `).join("");
   }
 
-  function renderHighlightPreview(text) {
-    if (!text.trim()) { el.highlightPreview.innerHTML = '<span class="empty-hint">Chưa có transcript.</span>'; return; }
-    let html = escapeHtml(text);
-
-    FILLERS.forEach((f) => {
-      const re = new RegExp(`\\b(${f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`, "gi");
-      html = html.replace(re, '<mark class="hl-warn">$1</mark>');
-    });
-    html = html.replace(/\b(\w+)(\s+)\1\b/gi, '<mark class="hl-warn">$1$2$1</mark>');
-
-    // Wrap long sentences with a note mark (best-effort split on . ! ?)
-    html = html.split(/(?<=[.!?])\s+/).map((sentence) => {
-      const plain = sentence.replace(/<[^>]+>/g, "");
-      const wc = (plain.match(/[A-Za-zÀ-ỹ']+/g) || []).length;
-      if (wc > 25) return `<mark class="hl-note">${sentence}</mark>`;
-      return sentence;
-    }).join(" ");
-
-    el.highlightPreview.innerHTML = `<p>${html}</p>`;
-  }
-
   let lastStats = computeStats("");
+  let autoAnalyzeTimer = null;
 
   function onTranscriptChange() {
     state.transcript = el.transcript.value;
     lastStats = computeStats(state.transcript);
     renderStats(lastStats);
-    if (el.highlightPreview.classList.contains("active")) renderHighlightPreview(state.transcript);
+    clearTimeout(autoAnalyzeTimer);
+    autoAnalyzeTimer = setTimeout(runAutoAnalysis, 500);
   }
   el.transcript.addEventListener("input", onTranscriptChange);
 
-  el.btnPreview.addEventListener("click", () => {
-    el.highlightPreview.classList.toggle("active");
-    if (el.highlightPreview.classList.contains("active")) renderHighlightPreview(state.transcript);
-  });
+  // ---------------------------------------------------------------------
+  // 6b. Auto error analysis (offline, heuristic, pattern-based)
+  //     Detects common ESL grammar/collocation mistakes directly from the
+  //     transcript. This is pattern-matching, not language understanding —
+  //     always flagged to the teacher as "gợi ý phát hiện tự động" and never
+  //     auto-applied without review.
+  // ---------------------------------------------------------------------
+  const IRREGULAR_PAST = {
+    go: "went", have: "had", has: "had", do: "did", does: "did", see: "saw", eat: "ate", take: "took",
+    make: "made", get: "got", give: "gave", come: "came", say: "said", think: "thought", buy: "bought",
+    bring: "brought", catch: "caught", teach: "taught", feel: "felt", find: "found", keep: "kept",
+    leave: "left", lose: "lost", meet: "met", pay: "paid", run: "ran", sell: "sold", send: "sent",
+    sit: "sat", sleep: "slept", spend: "spent", stand: "stood", tell: "told", understand: "understood",
+    win: "won", write: "wrote", speak: "spoke", break: "broke", choose: "chose", drive: "drove",
+    fall: "fell", fly: "flew", forget: "forgot", grow: "grew", hear: "heard", hold: "held", know: "knew",
+    lead: "led", lend: "lent", ride: "rode", ring: "rang", rise: "rose", show: "showed", sing: "sang",
+    swim: "swam", wake: "woke", wear: "wore", become: "became", read: "read"
+  };
+  const BASE_VERBS = Object.keys(IRREGULAR_PAST).filter((v) => v !== "has" && v !== "does").join("|");
+
+  // [regex (must have 1+ capture groups spanning the flagged phrase), makeFix, note]
+  const GRAMMAR_DETECTORS = [
+    {
+      re: /\b(he|she|it|this|that)\s+(go|come|like|want|need|have|do|make|take|get|know|think|live|work|study|play|watch|eat|drink|love|hate|say|tell|walk|run|feel|look|seem|belong|prefer|enjoy|believe|include|use|need|start|stay)\b(?!\s*(?:ing|s\b))/gi,
+      note: "Chia động từ sai ngôi thứ 3 số ít (thiếu -s/-es).",
+      fix: (m) => {
+        const v = m[2].toLowerCase();
+        const irregular3rd = { have: "has", do: "does" };
+        const form = irregular3rd[v] || m[2] + (/[sxzo]$|ch$|sh$/i.test(m[2]) ? "es" : "s");
+        return `${m[1]} ${form}`;
+      }
+    },
+    {
+      re: new RegExp(`\\b(i|we|they|you)\\s+(${BASE_VERBS})\\b`, "gi"),
+      note: "__PAST_TIME__", // handled specially below (needs whole-sentence context)
+      fix: (m) => `${m[1]} ${IRREGULAR_PAST[m[2].toLowerCase()] || m[2] + "ed"}`
+    },
+    {
+      re: /\b(don't|doesn't|didn't|can't|won't|isn't|aren't|wasn't|weren't)\b([^.!?]{0,30}?)\b(no|nothing|nobody|none|never)\b/gi,
+      note: "Phủ định kép (double negative) — tiếng Anh chuẩn chỉ dùng một từ phủ định.",
+      fix: (m) => null
+    },
+    {
+      re: /\bsince\s+(a|one|two|three|four|five|six|seven|eight|nine|ten|\d+)\s+(year|month|week|day)s?\b/gi,
+      note: "'since' dùng cho mốc thời gian, khoảng thời gian phải dùng 'for'.",
+      fix: (m) => `for ${m[1]} ${m[2]}s`
+    },
+    {
+      re: /\bmore\s+(better|worse|taller|shorter|faster|slower|bigger|smaller|easier|harder|higher|lower|cheaper|older|younger|busier|happier)\b/gi,
+      note: "So sánh hơn kép (double comparative) — bỏ 'more' vì tính từ đã ở dạng so sánh hơn.",
+      fix: (m) => m[1]
+    },
+    {
+      re: /\b(i am|i'm|he is|he's|she is|she's|they are|they're|we are|we're)\s+(teacher|doctor|engineer|student|nurse|farmer|worker|driver|singer|dancer|writer|artist|lawyer|manager|accountant)\b/gi,
+      note: "Thiếu mạo từ (a/an) trước danh từ nghề nghiệp số ít.",
+      fix: (m) => `${m[1]} a ${m[2]}`
+    }
+  ];
+
+  const COLLOCATION_FIXES = [
+    { re: /\bmake\s+(a\s+|an\s+)?(photo|photograph)s?\b/gi, fix: "take a photo", note: "Chụp ảnh: 'take a photo', không dùng 'make'." },
+    { re: /\bdo\s+(a\s+|an\s+)?mistakes?\b/gi, fix: "make a mistake", note: "'make a mistake', không dùng 'do'." },
+    { re: /\bmake\s+(my\s+|the\s+)?homework\b/gi, fix: "do homework", note: "'do homework', không dùng 'make'." },
+    { re: /\bmake\s+(my\s+|the\s+)?housework\b/gi, fix: "do housework", note: "'do housework', không dùng 'make'." },
+    { re: /\bdo\s+(a\s+)?decisions?\b/gi, fix: "make a decision", note: "'make a decision', không dùng 'do'." },
+    { re: /\bsay\s+(a\s+)?lies?\b/gi, fix: "tell a lie", note: "'tell a lie', không dùng 'say'." },
+    { re: /\bmarried\s+with\b/gi, fix: "married to", note: "'married to', không dùng 'with'." },
+    { re: /\bdepend\s+of\b/gi, fix: "depend on", note: "'depend on', không dùng 'of'." },
+    { re: /\blisten\s+(music|song|radio)\b/gi, fix: (m) => `listen to ${m[1]}`, note: "'listen to' + danh từ — 'listen' cần giới từ 'to'." },
+    { re: /\bdiscuss\s+about\b/gi, fix: "discuss", note: "'discuss' là ngoại động từ, không cần 'about'." },
+    { re: /\bexplain\s+(me|him|her|us|them)\b/gi, fix: (m) => `explain to ${m[1]}`, note: "'explain to somebody', cần giới từ 'to'." },
+    { re: /\bafraid\s+about\b/gi, fix: "afraid of", note: "'afraid of', không dùng 'about'." },
+    { re: /\binterested\s+about\b/gi, fix: "interested in", note: "'interested in', không dùng 'about'." },
+    { re: /\bvery\s+good\b/gi, fix: "excellent / outstanding", note: "Tính từ cơ bản dùng lặp lại — nâng band Lexical Resource bằng từ đồng nghĩa mạnh hơn." },
+    { re: /\bvery\s+bad\b/gi, fix: "terrible / awful", note: "Tính từ cơ bản dùng lặp lại — nâng band Lexical Resource bằng từ đồng nghĩa mạnh hơn." },
+    { re: /\bvery\s+nice\b/gi, fix: "lovely / delightful", note: "Tính từ cơ bản dùng lặp lại — nâng band Lexical Resource bằng từ đồng nghĩa mạnh hơn." },
+    { re: /\bvery\s+beautiful\b/gi, fix: "stunning / gorgeous", note: "Tính từ cơ bản dùng lặp lại — nâng band Lexical Resource bằng từ đồng nghĩa mạnh hơn." },
+    { re: /\bvery\s+big\b/gi, fix: "huge / enormous", note: "Tính từ cơ bản dùng lặp lại — nâng band Lexical Resource bằng từ đồng nghĩa mạnh hơn." }
+  ];
+
+  const PAST_TIME_MARKER = /\b(yesterday|last (night|week|month|year|weekend)|(\d+|a|one|two|three|four|five)\s+(day|week|month|year)s?\s+ago|when i was\s+(a\s+|an\s+)?(young|child|kid|student|little))\b/i;
+
+  function splitSentencesWithOffsets(text) {
+    const sentences = [];
+    let lastIndex = 0;
+    const re = /[.!?]+(\s+|$)/g;
+    let m;
+    while ((m = re.exec(text))) {
+      const end = m.index + m[0].length;
+      const raw = text.slice(lastIndex, end);
+      if (raw.trim()) sentences.push({ text: raw, start: lastIndex, end });
+      lastIndex = end;
+    }
+    if (lastIndex < text.length) {
+      const raw = text.slice(lastIndex);
+      if (raw.trim()) sentences.push({ text: raw, start: lastIndex, end: text.length });
+    }
+    return sentences;
+  }
+
+  function analyzeTranscript(text) {
+    const issues = []; // {start, end, category, matchText, suggestion, note}
+    if (!text || !text.trim()) return issues;
+
+    const sentences = splitSentencesWithOffsets(text);
+
+    sentences.forEach((sent) => {
+      const hasPastMarker = PAST_TIME_MARKER.test(sent.text);
+      const wordsInSentence = (sent.text.match(/[A-Za-zÀ-ỹ']+/g) || []).length;
+
+      // Structural: whole sentence too long / likely run-on
+      if (wordsInSentence > 25) {
+        issues.push({
+          start: sent.start, end: sent.end, category: "structure",
+          matchText: sent.text.trim(),
+          suggestion: null,
+          note: "Câu quá dài (>25 từ) — cân nhắc tách thành 2 câu ngắn hơn để tăng độ chính xác ngữ pháp và mạch lạc."
+        });
+      }
+
+      GRAMMAR_DETECTORS.forEach((det) => {
+        det.re.lastIndex = 0;
+        let m;
+        while ((m = det.re.exec(sent.text))) {
+          if (det.note === "__PAST_TIME__" && !hasPastMarker) continue; // only flag base-form verb if a past-time marker is present
+          const matchText = m[0];
+          const localStart = m.index;
+          const globalStart = sent.start + localStart;
+          const globalEnd = globalStart + matchText.length;
+          const suggestion = det.fix ? det.fix(m) : null;
+          const note = det.note === "__PAST_TIME__"
+            ? "Có mốc thời gian quá khứ trong câu nhưng động từ vẫn ở dạng nguyên mẫu — cần chia thì quá khứ."
+            : det.note;
+          issues.push({ start: globalStart, end: globalEnd, category: "gram", matchText, suggestion, note });
+          if (!det.re.global) break;
+        }
+      });
+
+      COLLOCATION_FIXES.forEach((det) => {
+        det.re.lastIndex = 0;
+        let m;
+        while ((m = det.re.exec(sent.text))) {
+          const matchText = m[0];
+          const globalStart = sent.start + m.index;
+          const globalEnd = globalStart + matchText.length;
+          const suggestion = typeof det.fix === "function" ? det.fix(m) : det.fix;
+          issues.push({ start: globalStart, end: globalEnd, category: "vocab", matchText, suggestion, note: det.note });
+        }
+      });
+    });
+
+    // De-overlap gram/vocab (point) issues among themselves only — a "structure" issue
+    // spans the whole sentence and must NEST around point issues, not swallow them.
+    const structureIssues = issues.filter((i) => i.category === "structure");
+    const pointIssues = issues.filter((i) => i.category !== "structure");
+    pointIssues.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+    const clean = [];
+    let cursor = -1;
+    pointIssues.forEach((iss) => {
+      if (iss.start >= cursor) { clean.push(iss); cursor = iss.end; }
+    });
+    return clean.concat(structureIssues).sort((a, b) => a.start - b.start);
+  }
+
+  function renderAnnotatedTranscript(text, issues) {
+    if (!text.trim()) {
+      el.annotatedTranscript.innerHTML = '<span class="empty-hint">Dán transcript ở trên để xem phân tích.</span>';
+      return;
+    }
+    if (issues.length === 0) {
+      el.annotatedTranscript.innerHTML = `<p>${escapeHtml(text)}</p>`;
+      return;
+    }
+
+    // Render sentence-by-sentence so a "structure" (too-long-sentence) box can nest
+    // around gram/vocab spans instead of competing with them for the same characters.
+    const sentences = splitSentencesWithOffsets(text);
+    const pointIssues = issues.filter((i) => i.category !== "structure").sort((a, b) => a.start - b.start);
+    const structureIssues = issues.filter((i) => i.category === "structure");
+
+    let html = "";
+    let cursor = 0;
+    let pi = 0;
+
+    sentences.forEach((sent) => {
+      html += escapeHtml(text.slice(cursor, sent.start));
+      let inner = "";
+      let innerCursor = sent.start;
+      while (pi < pointIssues.length && pointIssues[pi].start < sent.end) {
+        const iss = pointIssues[pi];
+        const idx = issues.indexOf(iss);
+        inner += escapeHtml(text.slice(innerCursor, iss.start));
+        const core = `<b>${escapeHtml(text.slice(iss.start, iss.end))}</b>`;
+        const cls = iss.category === "gram" ? "ann-gram" : "ann-vocab";
+        inner += `<span class="${cls}" data-issue="${idx}" title="${escapeHtml(iss.note)}">${core}</span>`;
+        innerCursor = iss.end;
+        pi++;
+      }
+      inner += escapeHtml(text.slice(innerCursor, sent.end));
+
+      const structIssue = structureIssues.find((s) => s.start === sent.start && s.end === sent.end);
+      if (structIssue) {
+        const idx = issues.indexOf(structIssue);
+        html += `<span class="ann-box" data-issue="${idx}" title="${escapeHtml(structIssue.note)}">${inner}</span>`;
+      } else {
+        html += inner;
+      }
+      cursor = sent.end;
+    });
+    html += escapeHtml(text.slice(cursor));
+    el.annotatedTranscript.innerHTML = `<p>${html}</p>`;
+  }
+
+  function renderSuggestionPanel(issues) {
+    if (issues.length === 0) {
+      el.suggestionPanel.innerHTML = '<span class="empty-hint">Chưa phát hiện lỗi nào trong transcript hiện tại.</span>';
+      return;
+    }
+    el.suggestionPanel.innerHTML = issues.map((iss, i) => {
+      const catClass = iss.category === "structure" ? "cat-structure" : `cat-${iss.category}`;
+      const label = iss.category === "structure" ? "📏 Câu dài / cấu trúc" : (CATS[iss.category] ? `${CATS[iss.category].icon} ${CATS[iss.category].label}` : iss.category);
+      return `
+      <div class="suggestion-item ${catClass}" data-issue="${i}">
+        <div class="si-head">${label}</div>
+        <div class="si-orig">"${escapeHtml(iss.matchText)}"</div>
+        ${iss.suggestion ? `<div class="si-fix"><b>Sửa:</b> ${escapeHtml(iss.suggestion)}</div>` : ""}
+        <div class="si-fix" style="color:var(--ink-600);">${escapeHtml(iss.note)}</div>
+      </div>`;
+    }).join("");
+  }
+
+  function wireIssueLinking() {
+    function setActive(idx, active) {
+      $$(`[data-issue="${idx}"]`).forEach((elm) => {
+        if (elm.classList.contains("suggestion-item")) return;
+        if (active) elm.setAttribute("data-active", "true"); else elm.removeAttribute("data-active");
+      });
+    }
+    el.annotatedTranscript.querySelectorAll("[data-issue]").forEach((elm) => {
+      const idx = elm.dataset.issue;
+      elm.addEventListener("mouseenter", () => setActive(idx, true));
+      elm.addEventListener("mouseleave", () => setActive(idx, false));
+      elm.addEventListener("click", () => {
+        const panelItem = el.suggestionPanel.querySelector(`[data-issue="${idx}"]`);
+        if (panelItem) panelItem.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+    el.suggestionPanel.querySelectorAll("[data-issue]").forEach((elm) => {
+      const idx = elm.dataset.issue;
+      elm.addEventListener("mouseenter", () => setActive(idx, true));
+      elm.addEventListener("mouseleave", () => setActive(idx, false));
+      elm.addEventListener("click", () => {
+        const span = el.annotatedTranscript.querySelector(`[data-issue="${idx}"]`);
+        if (span) span.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+  }
+
+  const REMEDIATION = {
+    pron: "Luyện âm cuối (-s, -ed), các cặp âm dễ nhầm (θ/s, r/l...) và trọng âm từ đa âm tiết; shadowing theo audio người bản ngữ 10-15 phút/ngày.",
+    into: "Luyện lên/xuống giọng đúng chức năng câu (câu hỏi Yes/No lên giọng cuối, câu trần thuật xuống giọng); nghe và bắt chước ngữ điệu người bản ngữ trước khi nói lại.",
+    vocab: "Học theo cụm từ (collocation) thay vì từ đơn lẻ; ôn lại danh sách collocation đã sai và thay thế các tính từ cơ bản (good/nice/bad) bằng từ đồng nghĩa mạnh hơn.",
+    gram: "Ôn lại quy tắc chia động từ theo chủ ngữ và theo mốc thời gian; luyện viết lại câu đã sai trước khi nói lại để tạo phản xạ đúng.",
+    structure: "Luyện chia ý thành câu ngắn, rõ ràng thay vì nối nhiều ý bằng 'and/but/so' liên tục — mỗi câu nên diễn đạt trọn một ý."
+  };
+
+  let lastAutoIssues = [];
+
+  function runAutoAnalysis() {
+    lastAutoIssues = analyzeTranscript(state.transcript);
+    el.issueCountBadge.textContent = `${lastAutoIssues.length} lỗi`;
+    renderAnnotatedTranscript(state.transcript, lastAutoIssues);
+    renderSuggestionPanel(lastAutoIssues);
+    wireIssueLinking();
+    renderErrorTable();
+    applyAutoBandSuggestions();
+  }
 
   // ---------------------------------------------------------------------
   // 7. Rubric sliders
   // ---------------------------------------------------------------------
+  const CRIT_KEYS = ["fc", "lr", "gra", "pron"];
+  const sliderTouched = { fc: false, lr: false, gra: false, pron: false };
+
+  function ensureAutoBadge(critEl) {
+    let badge = critEl.querySelector(".auto-badge");
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "auto-badge";
+      badge.textContent = "🤖 gợi ý";
+      critEl.querySelector(".crit-name").insertAdjacentElement("afterend", badge);
+    }
+    return badge;
+  }
+
   function updateCriterion(critEl) {
     const key = critEl.dataset.crit;
     const slider = critEl.querySelector(".crit-slider");
@@ -422,13 +729,67 @@
   }
 
   $$(".criterion").forEach((critEl) => {
+    ensureAutoBadge(critEl);
     updateCriterion(critEl);
     critEl.querySelector(".crit-slider").addEventListener("input", () => {
+      sliderTouched[critEl.dataset.crit] = true;
+      ensureAutoBadge(critEl).classList.remove("show");
       updateCriterion(critEl);
       updateOverall();
       renderSuggestion();
     });
   });
+
+  function applyAutoBandSuggestions() {
+    const bands = computeAutoBands(lastStats, lastAutoIssues, state.flags);
+    $$(".criterion").forEach((critEl) => {
+      const key = critEl.dataset.crit;
+      if (sliderTouched[key]) return; // never override a band the teacher already set/confirmed
+      const suggested = bands[key];
+      if (suggested == null) return;
+      critEl.querySelector(".crit-slider").value = suggested;
+      updateCriterion(critEl);
+      ensureAutoBadge(critEl).classList.add("show");
+    });
+    updateOverall();
+    renderSuggestion();
+  }
+
+  function computeAutoBands(stats, issues, manualFlags) {
+    const words = Math.max(stats.wordCount, 1);
+    const per100 = (n) => (n / words) * 100;
+    function bandFromRate(rate, thresholds) {
+      for (const [band, maxRate] of thresholds) if (rate <= maxRate) return band;
+      return 4;
+    }
+    // Deliberately conservative thresholds (chấm sát) — capped at band 8, never auto-suggests 9.
+    const STRICT = [[8, 0], [7, 1], [6, 2.5], [5, 4.5], [4, Infinity]];
+
+    const gramCount = issues.filter((i) => i.category === "gram" || i.category === "structure").length
+      + manualFlags.filter((f) => f.category === "gram").length;
+    const vocabCount = issues.filter((i) => i.category === "vocab").length
+      + manualFlags.filter((f) => f.category === "vocab").length;
+
+    const graBand = bandFromRate(per100(gramCount), STRICT);
+    const lrBand = bandFromRate(per100(vocabCount), STRICT);
+
+    let fcPenalty = 0;
+    if (stats.fillerCount > 8) fcPenalty++;
+    if (stats.repeatCount > 2) fcPenalty++;
+    if (stats.ttr < 40 && stats.wordCount > 20) fcPenalty++;
+    if (stats.wpm && (stats.wpm < 100 || stats.wpm > 190)) fcPenalty++;
+    const fcBand = stats.wordCount > 0 ? Math.max(4, Math.min(8, 7 - fcPenalty)) : null;
+
+    const pronCount = manualFlags.filter((f) => f.category === "pron" || f.category === "into").length;
+    const pronBand = pronCount > 0 || manualFlags.length > 0 ? bandFromRate(per100(pronCount), STRICT) : null;
+
+    return {
+      fc: fcBand,
+      lr: stats.wordCount > 0 ? lrBand : null,
+      gra: stats.wordCount > 0 ? graBand : null,
+      pron: pronBand
+    };
+  }
 
   function updateOverall() {
     const { fc, lr, gra, pron } = state.scores;
@@ -479,9 +840,24 @@
       lines.push("- Chưa có transcript để phân tích.");
     }
 
+    if (lastAutoIssues.length > 0) {
+      lines.push("");
+      lines.push(`LỖI PHÁT HIỆN TỰ ĐỘNG TỪ TRANSCRIPT (${lastAutoIssues.length}, ngữ pháp/từ vựng/cấu trúc):`);
+      ["gram", "vocab", "structure"].forEach((c) => {
+        const list = lastAutoIssues.filter((i) => i.category === c);
+        if (list.length === 0) return;
+        const label = c === "structure" ? "📏 Câu dài / cấu trúc" : `${CATS[c].icon} ${CATS[c].label}`;
+        lines.push("");
+        lines.push(`${label} (${list.length}):`);
+        list.forEach((iss) => {
+          lines.push(`  "${iss.matchText}"${iss.suggestion ? ` → Sửa: ${iss.suggestion}` : ""} — ${iss.note}`);
+        });
+      });
+    }
+
     if (state.flags.length > 0) {
       lines.push("");
-      lines.push(`NHẬT KÝ LỖI CHI TIẾT (${state.flags.length} lỗi, theo toàn bộ file audio):`);
+      lines.push(`NHẬT KÝ LỖI THEO THỜI ĐIỂM KHI NGHE (${state.flags.length} lỗi, Phát âm & Ngữ điệu):`);
       CAT_ORDER.forEach((c) => {
         const list = groups[c];
         if (list.length === 0) return;
@@ -541,8 +917,13 @@
       const key = critEl.dataset.crit;
       critEl.querySelector(".crit-slider").value = state.scores[key];
       updateCriterion(critEl);
+      ensureAutoBadge(critEl).classList.remove("show");
     });
-    onTranscriptChange();
+    state.transcript = el.transcript.value;
+    lastStats = computeStats(state.transcript);
+    renderStats(lastStats);
+    clearTimeout(autoAnalyzeTimer);
+    runAutoAnalysis();
     renderFlags();
     renderTimeline();
     renderErrorSummary();
@@ -591,6 +972,7 @@
     el.player.src = "";
     el.audioControls.classList.remove("active");
     el.audioFile.value = "";
+    CRIT_KEYS.forEach((k) => { sliderTouched[k] = false; });
     applyStateToForm();
   }
 
@@ -629,6 +1011,7 @@
       const found = sessions.find((s) => s.id === id);
       if (found) {
         state = JSON.parse(JSON.stringify(found));
+        CRIT_KEYS.forEach((k) => { sliderTouched[k] = true; }); // loaded bands were already teacher-confirmed — don't auto-override
         applyStateToForm();
         closeDrawer();
       }
@@ -706,6 +1089,8 @@
     }
 
     const feedbackText = s.feedbackFinal && s.feedbackFinal.trim() ? s.feedbackFinal : el.suggestionBox.textContent;
+    const annotatedHtml = state.transcript.trim() ? el.annotatedTranscript.innerHTML : '<p class="pr-empty">Chưa có transcript.</p>';
+    const errorTableHtml = el.errorTable.querySelector("table") ? el.errorTable.innerHTML : '<p class="pr-empty">Chưa có dữ liệu lỗi.</p>';
 
     el.printReport.innerHTML = `
       <div class="pr-letterhead">
@@ -722,10 +1107,17 @@
       ${bandHtml}
       ${critHtml}
 
-      <div class="pr-section-title">2. Nhật ký lỗi chi tiết theo toàn bộ file nghe</div>
+      <div class="pr-section-title">2. Bảng tổng hợp phân tích lỗi</div>
+      ${errorTableHtml}
+
+      <div class="pr-section-title">3. Bản ghi có đánh dấu lỗi</div>
+      <div class="small-note" style="margin-bottom:6px;">Gạch chân = ngữ pháp · Highlight = từ vựng/collocation · Khung viền = câu quá dài/cấu trúc · <b>Đậm</b> = từ/cụm sai chính xác.</div>
+      <div class="pr-annotated">${annotatedHtml}</div>
+
+      <div class="pr-section-title">4. Nhật ký lỗi theo thời điểm khi nghe (Phát âm &amp; Ngữ điệu)</div>
       ${logHtml}
 
-      <div class="pr-section-title">3. Nhận xét tổng kết của giáo viên</div>
+      <div class="pr-section-title">5. Nhận xét tổng kết của giáo viên</div>
       <div class="pr-feedback-text">${escapeHtml(feedbackText || "(chưa có nhận xét)")}</div>
 
       <div class="pr-signoff">
@@ -737,6 +1129,7 @@
 
   el.btnExportReport.addEventListener("click", () => {
     collectStateFromForm();
+    runAutoAnalysis();
     buildPrintReport();
     window.print();
   });
