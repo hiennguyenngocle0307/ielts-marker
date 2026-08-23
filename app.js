@@ -1,6 +1,6 @@
 /* IELTS Speaking Marker — offline marking tool
    No frameworks, no build step, no network calls. Everything stays on this machine:
-   - transcript + scores + feedback are saved to localStorage (this browser only)
+   - transcript + scores + error log + feedback are saved to localStorage (this browser only)
    - the audio file itself is never uploaded or persisted between sessions
 */
 
@@ -62,6 +62,15 @@
 
   const FILLERS = ["um", "uh", "erm", "hmm", "you know", "i mean", "sort of", "kind of", "basically", "like", "actually", "well", "so yeah"];
 
+  // Error log categories — mapped visually to the same blue/pink brand hues used elsewhere.
+  const CATS = {
+    pron:  { label: "Phát âm (âm/từ)",         icon: "🗣️", short: "Phát âm" },
+    into:  { label: "Ngữ điệu / Trọng âm",      icon: "🎵", short: "Ngữ điệu" },
+    vocab: { label: "Từ vựng / Collocation",    icon: "📖", short: "Từ vựng" },
+    gram:  { label: "Ngữ pháp",                 icon: "✏️", short: "Ngữ pháp" }
+  };
+  const CAT_ORDER = ["pron", "into", "vocab", "gram"];
+
   // ---------------------------------------------------------------------
   // 2. State
   // ---------------------------------------------------------------------
@@ -70,10 +79,12 @@
     studentName: "",
     testDate: "",
     testPart: "",
+    teacherName: "",
     examinerNote: "",
     audioFileName: "",
+    audioDuration: 0,
     transcript: "",
-    flags: [], // {time, note}
+    flags: [], // {time, category, heard, fix}
     scores: { fc: 4, lr: 4, gra: 4, pron: 4 },
     feedbackFinal: "",
     savedAt: null
@@ -91,13 +102,21 @@
     studentName: $("#studentName"),
     testDate: $("#testDate"),
     testPart: $("#testPart"),
+    teacherName: $("#teacherName"),
     examinerNote: $("#examinerNote"),
     dropzone: $("#dropzone"),
     audioFile: $("#audioFile"),
     audioControls: $("#audioControls"),
     player: $("#player"),
-    flagNote: $("#flagNote"),
+    durationBadge: $("#durationBadge"),
+    timeline: $("#timeline"),
+    btnPrevFlag: $("#btnPrevFlag"),
+    btnNextFlag: $("#btnNextFlag"),
+    errCategory: $("#errCategory"),
+    errHeard: $("#errHeard"),
+    errFix: $("#errFix"),
     btnFlag: $("#btnFlag"),
+    errorSummary: $("#errorSummary"),
     flagList: $("#flagList"),
     transcript: $("#transcript"),
     wordCountBadge: $("#wordCountBadge"),
@@ -119,7 +138,8 @@
     drawer: $("#drawer"),
     drawerBackdrop: $("#drawerBackdrop"),
     btnCloseDrawer: $("#btnCloseDrawer"),
-    historyList: $("#historyList")
+    historyList: $("#historyList"),
+    printReport: $("#printReport")
   };
 
   const RING_CIRC = 2 * Math.PI * 52;
@@ -128,13 +148,15 @@
   // 4. Utility
   // ---------------------------------------------------------------------
   function fmtTime(t) {
-    const m = Math.floor(t / 60);
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
     const s = Math.floor(t % 60);
+    if (h > 0) return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
 
   function escapeHtml(str) {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   function roundOverall(avg) {
@@ -181,26 +203,62 @@
     });
   });
 
-  el.btnFlag.addEventListener("click", () => {
-    if (!el.player.src) return;
-    const note = el.flagNote.value.trim() || "(không có ghi chú)";
-    state.flags.push({ time: el.player.currentTime, note });
-    state.flags.sort((a, b) => a.time - b.time);
-    el.flagNote.value = "";
-    renderFlags();
+  el.player.addEventListener("loadedmetadata", () => {
+    state.audioDuration = el.player.duration || 0;
+    el.durationBadge.textContent = state.audioDuration ? `Tổng thời lượng: ${fmtTime(state.audioDuration)}` : "";
+    renderStats(computeStats(state.transcript));
+    renderTimeline();
   });
+
+  // ---- Error log (categorized, timestamped) ----
+  el.btnFlag.addEventListener("click", () => {
+    if (!el.player.src) { alert("Hãy tải file audio lên trước."); return; }
+    const heard = el.errHeard.value.trim();
+    if (!heard) { el.errHeard.focus(); alert("Mô tả 'Nghe được gì' trước khi ghi lỗi."); return; }
+    const entry = {
+      time: el.player.currentTime,
+      category: el.errCategory.value,
+      heard,
+      fix: el.errFix.value.trim()
+    };
+    state.flags.push(entry);
+    state.flags.sort((a, b) => a.time - b.time);
+    el.errHeard.value = "";
+    el.errFix.value = "";
+    el.errHeard.focus();
+    renderFlags();
+    renderTimeline();
+    renderErrorSummary();
+  });
+
+  function renderErrorSummary() {
+    const counts = { pron: 0, into: 0, vocab: 0, gram: 0 };
+    state.flags.forEach((f) => { if (counts[f.category] != null) counts[f.category]++; });
+    const total = state.flags.length;
+    if (total === 0) { el.errorSummary.innerHTML = ""; return; }
+    el.errorSummary.innerHTML = CAT_ORDER.map((c) =>
+      `<span class="cat-chip cat-${c}">${CATS[c].icon} ${CATS[c].short}: ${counts[c]}</span>`
+    ).join("") + `<span class="cat-chip" style="background:var(--yellow-50); color:var(--yellow-700);">Tổng: ${total}</span>`;
+  }
 
   function renderFlags() {
     if (state.flags.length === 0) {
-      el.flagList.innerHTML = '<li class="empty-hint">Chưa có đánh dấu nào. Nghe audio và bấm "Đánh dấu thời điểm" để ghi lại lỗi/điểm cần chú ý.</li>';
+      el.flagList.innerHTML = '<li class="empty-hint">Chưa có lỗi nào được ghi. Nghe audio, chọn loại lỗi, mô tả rồi bấm "Ghi lỗi tại thời điểm đang nghe".</li>';
       return;
     }
-    el.flagList.innerHTML = state.flags.map((f, i) => `
-      <li class="flag-item">
-        <button class="flag-time" data-idx="${i}" data-action="seek">${fmtTime(f.time)}</button>
-        <span class="flag-note">${escapeHtml(f.note)}</span>
-        <button class="flag-del" data-idx="${i}" data-action="del">✕</button>
-      </li>`).join("");
+    el.flagList.innerHTML = state.flags.map((f, i) => {
+      const cat = CATS[f.category] || CATS.pron;
+      return `
+      <li class="flag-item cat-${f.category}">
+        <div class="flag-item-head">
+          <button class="flag-time" data-idx="${i}" data-action="seek">${fmtTime(f.time)}</button>
+          <span class="flag-cat-label">${cat.icon} ${cat.label}</span>
+          <button class="flag-del" data-idx="${i}" data-action="del">✕</button>
+        </div>
+        <div class="flag-heard">${escapeHtml(f.heard)}</div>
+        ${f.fix ? `<div class="flag-fix"><b>Sửa:</b> ${escapeHtml(f.fix)}</div>` : ""}
+      </li>`;
+    }).join("");
   }
 
   el.flagList.addEventListener("click", (e) => {
@@ -213,7 +271,55 @@
     } else if (btn.dataset.action === "del") {
       state.flags.splice(idx, 1);
       renderFlags();
+      renderTimeline();
+      renderErrorSummary();
     }
+  });
+
+  // ---- Timeline: visualise where errors sit across a long (9-15 min) file ----
+  function renderTimeline() {
+    const duration = state.audioDuration || el.player.duration || 0;
+    if (!duration || !isFinite(duration)) {
+      el.timeline.innerHTML = '<span class="timeline-empty">Timeline sẽ hiện sau khi audio tải xong.</span>';
+      return;
+    }
+    if (state.flags.length === 0) {
+      el.timeline.innerHTML = "";
+      return;
+    }
+    el.timeline.innerHTML = state.flags.map((f) => {
+      const pct = Math.min(100, Math.max(0, (f.time / duration) * 100));
+      const cat = CATS[f.category] || CATS.pron;
+      const title = `${fmtTime(f.time)} · ${cat.label}: ${f.heard}`;
+      return `<div class="timeline-marker cat-${f.category}" style="left:${pct}%" title="${escapeHtml(title)}" data-time="${f.time}"></div>`;
+    }).join("");
+  }
+
+  el.timeline.addEventListener("click", (e) => {
+    const marker = e.target.closest(".timeline-marker");
+    if (marker) {
+      el.player.currentTime = parseFloat(marker.dataset.time);
+      el.player.play();
+      return;
+    }
+    const duration = state.audioDuration || el.player.duration || 0;
+    if (!duration) return;
+    const rect = el.timeline.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    el.player.currentTime = Math.max(0, Math.min(duration, pct * duration));
+  });
+
+  el.btnPrevFlag.addEventListener("click", () => {
+    if (state.flags.length === 0) return;
+    const t = el.player.currentTime;
+    const prev = [...state.flags].reverse().find((f) => f.time < t - 0.25);
+    el.player.currentTime = prev ? prev.time : state.flags[0].time;
+  });
+  el.btnNextFlag.addEventListener("click", () => {
+    if (state.flags.length === 0) return;
+    const t = el.player.currentTime;
+    const next = state.flags.find((f) => f.time > t + 0.25);
+    el.player.currentTime = next ? next.time : state.flags[state.flags.length - 1].time;
   });
 
   // ---------------------------------------------------------------------
@@ -242,7 +348,7 @@
 
     const longSentences = sentences.filter((s) => (s.match(/[A-Za-zÀ-ỹ']+/g) || []).length > 25).length;
 
-    let audioDuration = el.player.duration;
+    let audioDuration = state.audioDuration || el.player.duration;
     let wpm = null;
     if (audioDuration && isFinite(audioDuration) && audioDuration > 0 && wordCount > 0) {
       wpm = Math.round(wordCount / (audioDuration / 60));
@@ -341,10 +447,17 @@
   // ---------------------------------------------------------------------
   // 8. Feedback suggestion
   // ---------------------------------------------------------------------
+  function groupFlagsByCategory() {
+    const groups = { pron: [], into: [], vocab: [], gram: [] };
+    state.flags.forEach((f) => { if (groups[f.category]) groups[f.category].push(f); });
+    return groups;
+  }
+
   function renderSuggestion() {
     const overall = updateOverall();
     const s = state.scores;
     const stats = lastStats;
+    const groups = groupFlagsByCategory();
 
     let lines = [];
     lines.push(`BAND ĐIỂM TỔNG: ${overall}`);
@@ -368,8 +481,16 @@
 
     if (state.flags.length > 0) {
       lines.push("");
-      lines.push("GHI CHÚ THEO THỜI ĐIỂM (khi nghe audio):");
-      state.flags.forEach((f) => lines.push(`- ${fmtTime(f.time)}: ${f.note}`));
+      lines.push(`NHẬT KÝ LỖI CHI TIẾT (${state.flags.length} lỗi, theo toàn bộ file audio):`);
+      CAT_ORDER.forEach((c) => {
+        const list = groups[c];
+        if (list.length === 0) return;
+        lines.push("");
+        lines.push(`${CATS[c].icon} ${CATS[c].label} (${list.length}):`);
+        list.forEach((f) => {
+          lines.push(`  [${fmtTime(f.time)}] Nghe được: ${f.heard}${f.fix ? ` → Sửa: ${f.fix}` : ""}`);
+        });
+      });
     }
 
     const text = lines.join("\n");
@@ -401,6 +522,7 @@
     state.studentName = el.studentName.value.trim();
     state.testDate = el.testDate.value;
     state.testPart = el.testPart.value.trim();
+    state.teacherName = el.teacherName.value.trim();
     state.examinerNote = el.examinerNote.value.trim();
     state.transcript = el.transcript.value;
     state.feedbackFinal = el.feedbackFinal.value;
@@ -410,9 +532,11 @@
     el.studentName.value = state.studentName || "";
     el.testDate.value = state.testDate || "";
     el.testPart.value = state.testPart || "";
+    el.teacherName.value = state.teacherName || "";
     el.examinerNote.value = state.examinerNote || "";
     el.transcript.value = state.transcript || "";
     el.feedbackFinal.value = state.feedbackFinal || "";
+    el.durationBadge.textContent = state.audioDuration ? `Tổng thời lượng: ${fmtTime(state.audioDuration)}` : "";
     $$(".criterion").forEach((critEl) => {
       const key = critEl.dataset.crit;
       critEl.querySelector(".crit-slider").value = state.scores[key];
@@ -420,6 +544,8 @@
     });
     onTranscriptChange();
     renderFlags();
+    renderTimeline();
+    renderErrorSummary();
     renderSuggestion();
   }
 
@@ -457,8 +583,8 @@
 
   function resetForm() {
     state = {
-      id: null, studentName: "", testDate: "", testPart: "", examinerNote: "",
-      audioFileName: "", transcript: "", flags: [],
+      id: null, studentName: "", testDate: "", testPart: "", teacherName: "", examinerNote: "",
+      audioFileName: "", audioDuration: 0, transcript: "", flags: [],
       scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, feedbackFinal: "", savedAt: null
     };
     if (audioURL) { URL.revokeObjectURL(audioURL); audioURL = null; }
@@ -484,7 +610,7 @@
           <span class="hi-band">${s.overall != null ? s.overall : "–"}</span>
         </div>
         <div class="hi-meta">${s.testDate || ""} ${s.testPart ? "· " + escapeHtml(s.testPart) : ""}</div>
-        <div class="hi-meta">Lưu lúc: ${s.savedAt ? new Date(s.savedAt).toLocaleString("vi-VN") : ""}</div>
+        <div class="hi-meta">${(s.flags || []).length} lỗi ghi nhận · Lưu lúc: ${s.savedAt ? new Date(s.savedAt).toLocaleString("vi-VN") : ""}</div>
         <div class="hi-actions">
           <button class="btn btn-sm" data-action="load">Mở</button>
           <button class="btn btn-sm btn-danger" data-action="delete">Xoá</button>
@@ -522,21 +648,107 @@
   el.drawerBackdrop.addEventListener("click", closeDrawer);
 
   // ---------------------------------------------------------------------
-  // 11. Export
+  // 11. Professional print report
   // ---------------------------------------------------------------------
+  function buildPrintReport() {
+    const s = state;
+    const overall = updateOverall();
+    const groups = groupFlagsByCategory();
+    const genDate = new Date().toLocaleString("vi-VN");
+
+    const infoRows = [
+      ["Học viên", s.studentName || "—"],
+      ["Ngày chấm", s.testDate || "—"],
+      ["Phần thi", s.testPart || "—"],
+      ["Giáo viên chấm", s.teacherName || "—"],
+      ["File audio", s.audioFileName || "—"],
+      ["Thời lượng", s.audioDuration ? fmtTime(s.audioDuration) : "—"],
+      ["Ghi chú", s.examinerNote || "—"]
+    ];
+
+    const infoHtml = `<table class="pr-info-table">${infoRows.map(([label, val]) =>
+      `<tr><td class="pr-label">${escapeHtml(label)}</td><td>${escapeHtml(val)}</td></tr>`
+    ).join("")}</table>`;
+
+    const bandHtml = `
+      <table class="pr-band-table">
+        <tr><th>Fluency &amp; Coherence</th><th>Lexical Resource</th><th>Grammatical Range &amp; Accuracy</th><th>Pronunciation</th><th>Band tổng</th></tr>
+        <tr>
+          <td class="pr-band-num">${s.scores.fc}</td>
+          <td class="pr-band-num">${s.scores.lr}</td>
+          <td class="pr-band-num">${s.scores.gra}</td>
+          <td class="pr-band-num">${s.scores.pron}</td>
+          <td class="pr-overall">${overall}</td>
+        </tr>
+      </table>`;
+
+    const critHtml = Object.keys(CRIT_LABELS).map((key) => `
+      <div class="pr-criterion-block">
+        <span class="pr-crit-name">${CRIT_LABELS[key]}</span> — <span class="pr-crit-band">Band ${s.scores[key]}</span>
+        <p>${escapeHtml(DESCRIPTORS[key][s.scores[key]])}</p>
+      </div>
+    `).join("");
+
+    let logHtml = "";
+    if (s.flags.length === 0) {
+      logHtml = `<p class="pr-empty">Không có lỗi nào được ghi lại theo thời điểm trong lần nghe này.</p>`;
+    } else {
+      CAT_ORDER.forEach((c) => {
+        const list = groups[c];
+        if (!list || list.length === 0) return;
+        logHtml += `<div class="pr-cat-heading">${CATS[c].icon} ${CATS[c].label} (${list.length} lỗi)</div>`;
+        logHtml += `<table class="pr-log-table"><tr><th>Thời điểm</th><th>Nghe được (lỗi)</th><th>Cách sửa</th></tr>`;
+        list.forEach((f) => {
+          logHtml += `<tr><td class="pr-time">${fmtTime(f.time)}</td><td>${escapeHtml(f.heard)}</td><td>${f.fix ? escapeHtml(f.fix) : "—"}</td></tr>`;
+        });
+        logHtml += `</table>`;
+      });
+    }
+
+    const feedbackText = s.feedbackFinal && s.feedbackFinal.trim() ? s.feedbackFinal : el.suggestionBox.textContent;
+
+    el.printReport.innerHTML = `
+      <div class="pr-letterhead">
+        <div>
+          <div class="pr-title">Báo cáo chấm nói IELTS</div>
+          <div class="pr-sub">IELTS Speaking Marker — báo cáo chấm chi tiết theo rubric 4 tiêu chí</div>
+        </div>
+        <div class="pr-meta">Ngày xuất báo cáo<br>${escapeHtml(genDate)}</div>
+      </div>
+
+      ${infoHtml}
+
+      <div class="pr-section-title">1. Kết quả theo 4 tiêu chí</div>
+      ${bandHtml}
+      ${critHtml}
+
+      <div class="pr-section-title">2. Nhật ký lỗi chi tiết theo toàn bộ file nghe</div>
+      ${logHtml}
+
+      <div class="pr-section-title">3. Nhận xét tổng kết của giáo viên</div>
+      <div class="pr-feedback-text">${escapeHtml(feedbackText || "(chưa có nhận xét)")}</div>
+
+      <div class="pr-signoff">
+        <div class="pr-sign-block"><div class="pr-sign-line">Giáo viên chấm${s.teacherName ? " — " + escapeHtml(s.teacherName) : ""}</div></div>
+        <div class="pr-sign-block"><div class="pr-sign-line">Ngày ký</div></div>
+      </div>
+    `;
+  }
+
   el.btnExportReport.addEventListener("click", () => {
     collectStateFromForm();
+    buildPrintReport();
     window.print();
   });
 
   el.btnExportCsv.addEventListener("click", () => {
     const sessions = getSessions();
     if (sessions.length === 0) { alert("Chưa có bài chấm nào để xuất."); return; }
-    const header = ["Học viên", "Ngày", "Phần thi", "FC", "LR", "GRA", "Pronunciation", "Band tổng", "Lưu lúc"];
+    const header = ["Học viên", "Ngày", "Phần thi", "Giáo viên", "FC", "LR", "GRA", "Pronunciation", "Band tổng", "Số lỗi ghi nhận", "Lưu lúc"];
     const rows = sessions.map((s) => [
-      s.studentName, s.testDate, s.testPart,
+      s.studentName, s.testDate, s.testPart, s.teacherName,
       s.scores.fc, s.scores.lr, s.scores.gra, s.scores.pron,
-      s.overall, s.savedAt
+      s.overall, (s.flags || []).length, s.savedAt
     ]);
     const csv = [header, ...rows].map((r) =>
       r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
@@ -555,7 +767,6 @@
   // ---------------------------------------------------------------------
   // 12. Init
   // ---------------------------------------------------------------------
-  el.player.addEventListener("loadedmetadata", () => renderStats(computeStats(state.transcript)));
   el.testDate.valueAsDate = new Date();
   applyStateToForm();
   renderHistory();

@@ -37,6 +37,10 @@
       <label for="testPart">Phần thi</label>
       <input type="text" id="testPart" placeholder="Part 1 / 2 / 3 hoặc Full test">
     </div>
+    <div class="field">
+      <label for="teacherName">Giáo viên chấm</label>
+      <input type="text" id="teacherName" placeholder="Tên giáo viên">
+    </div>
     <div class="field" style="flex:1; min-width:200px;">
       <label for="examinerNote">Ghi chú nhanh</label>
       <input type="text" id="examinerNote" placeholder="VD: mock test tuần 3, thi thật ngày 12/9">
@@ -61,7 +65,8 @@
     <div class="col-left">
 
       <div class="card">
-        <h2>🎧 Audio bài nói</h2>
+        <h2>🎧 Audio bài nói <span class="badge" id="durationBadge"></span></h2>
+        <div class="small-note" style="margin-bottom:10px;">Hỗ trợ file dài (mock test 9–15 phút, Part 1+2+3 trong 1 file). Dùng timeline bên dưới để thấy lỗi phân bố ở đâu trong toàn bài, và nút "Lỗi trước/sau" để nhảy nhanh giữa các mốc đã đánh dấu.</div>
         <div class="dropzone" id="dropzone">
           <div>Kéo thả file audio vào đây, hoặc</div>
           <label class="dz-label" for="audioFile">chọn file từ máy</label>
@@ -71,20 +76,42 @@
 
         <div class="audio-controls" id="audioControls">
           <audio id="player" controls></audio>
+          <div class="timeline" id="timeline"></div>
+
           <div class="speed-row">
             <span class="small-note" style="margin:0;">Tốc độ:</span>
             <button class="speed-btn" data-speed="0.75">0.75x</button>
             <button class="speed-btn active" data-speed="1">1x</button>
             <button class="speed-btn" data-speed="1.25">1.25x</button>
             <button class="speed-btn" data-speed="1.5">1.5x</button>
+            <span style="flex:1;"></span>
+            <button class="btn btn-sm btn-ghost" id="btnPrevFlag">◀ Lỗi trước</button>
+            <button class="btn btn-sm btn-ghost" id="btnNextFlag">Lỗi sau ▶</button>
           </div>
 
-          <div class="flag-row">
-            <input type="text" id="flagNote" placeholder="Ghi chú tại thời điểm đang nghe (VD: sai phát âm 'clothes')">
-            <button class="btn btn-sm" id="btnFlag">Đánh dấu thời điểm</button>
+          <div class="error-form">
+            <div class="error-form-row">
+              <select id="errCategory" class="err-select">
+                <option value="pron">🗣️ Phát âm (âm/từ)</option>
+                <option value="into">🎵 Ngữ điệu / Trọng âm</option>
+                <option value="vocab">📖 Từ vựng / Collocation</option>
+                <option value="gram">✏️ Ngữ pháp</option>
+              </select>
+            </div>
+            <div class="error-form-row">
+              <input type="text" id="errHeard" placeholder="Nghe được gì? VD: phát âm /θ/ thành /s/ ở từ 'think', hoặc 'I go there yesterday'">
+            </div>
+            <div class="error-form-row">
+              <input type="text" id="errFix" placeholder="Sửa thành gì? VD: /θɪŋk/ đúng âm 'th', hoặc 'I went there yesterday'">
+            </div>
+            <div class="error-form-row">
+              <button class="btn btn-primary btn-sm" id="btnFlag">+ Ghi lỗi tại thời điểm đang nghe</button>
+            </div>
           </div>
+
+          <div class="error-summary" id="errorSummary"></div>
           <ul class="flag-list" id="flagList">
-            <li class="empty-hint">Chưa có đánh dấu nào. Nghe audio và bấm "Đánh dấu thời điểm" để ghi lại lỗi/điểm cần chú ý.</li>
+            <li class="empty-hint">Chưa có lỗi nào được ghi. Nghe audio, chọn loại lỗi, mô tả rồi bấm "Ghi lỗi tại thời điểm đang nghe".</li>
           </ul>
         </div>
       </div>
@@ -205,6 +232,8 @@
   </div>
   <div id="historyList"></div>
 </div>
+
+<div id="printReport" class="print-report" aria-hidden="true"></div>
 
 <script src="app.js"></script>
 </body>
