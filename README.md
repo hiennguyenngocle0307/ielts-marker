@@ -10,13 +10,14 @@ Bấm đúp vào `start.bat`, hoặc bấm đúp trực tiếp vào `index.html`
 
 - **Audio**: chọn file audio, nghe với 3 tốc độ (0.75x / 1x / 1.25x).
 - **Transcript**: dán trực tiếp vào ô, hoặc bấm "Tải file .txt" để nạp từ file có sẵn. App hiện số từ và số từ đệm (um/uh/like...) để tham khảo.
-- **Phiếu chấm 4 tiêu chí đúng mẫu "PHIẾU CHẤM CỦA CÔ"**: mỗi tiêu chí (Fluency & Coherence, Lexical Resource, Grammatical Range, Pronunciation) có Band (4–9, mô tả hiện kèm), ô **Bằng chứng cụ thể** để trích lời học viên, và các ô **Con số đo được** riêng theo từng tiêu chí (P1/P2 giây, số lần pause, từ band 7 dùng, từ lặp, câu phức, lỗi hệ thống, âm cuối rơi, trọng âm sai, ghi chú ngữ điệu).
+- **Chi tiết từng câu hỏi & câu trả lời (Part 1/2/3)**: bảng riêng để ghi từng câu hỏi, tóm tắt câu trả lời, **số giây trả lời**, và **nhận xét riêng cho từng câu** — bấm "+ Thêm câu hỏi" để thêm dòng, có sẵn 7 dòng mẫu (3 P1 + 1 P2 + 3 P3). Số giây trung bình Part 1/2/3 **tự động điền** vào ô "Con số đo được" của Fluency & Coherence bên dưới, không cần nhập tay 2 lần.
+- **Phiếu chấm 4 tiêu chí đúng mẫu "PHIẾU CHẤM CỦA CÔ"**: mỗi tiêu chí (Fluency & Coherence, Lexical Resource, Grammatical Range, Pronunciation) có Band (4–9, mô tả hiện kèm), ô **Bằng chứng cụ thể** để trích lời học viên, và các ô **Con số đo được** riêng theo từng tiêu chí (P1/P2/P3 giây trung bình, số lần pause, từ band 7 dùng, từ lặp, câu phức, lỗi hệ thống, âm cuối rơi, trọng âm sai, ghi chú ngữ điệu).
 - **Tính band tổng tự động**, đúng công thức làm tròn của IELTS (trung bình 4 tiêu chí; .25 làm tròn lên nửa band, .75 làm tròn lên nguyên band) — hiện cả công thức (FC+LR+GRA+P)÷4.
 - **Gợi ý nhận xét**: bấm 1 nút để có bản nháp nhận xét dựa trên band + bằng chứng đã điền, rồi chỉnh sửa lại theo ý bạn.
 - **Gợi ý cải thiện & luyện tập**: bấm 1 nút để có bài tập luyện tập cụ thể theo từng tiêu chí, tự điều chỉnh theo band đã chọn (band thấp → bài tập nền tảng, band cao → bài tập nâng cao).
 - **Bản chỉnh sửa mẫu hướng tới Band 7.5**: ô để viết "câu gốc → câu nâng cấp" cho học viên đối chiếu trực tiếp.
 - **Lưu & mở lại**: mỗi bài chấm lưu vào danh sách bên dưới (tên, mock số, ngày, band) — bấm "Mở" để xem lại đầy đủ (kể cả bằng chứng + con số đo được), "Xoá" để bỏ.
-- **In / Xuất PDF**: xuất phiếu chấm đầy đủ — thông tin học viên/mock/chủ đề Part 2, bảng điểm 4 tiêu chí kèm bằng chứng + con số đo được, nhận xét, gợi ý luyện tập, và bản chỉnh sửa mẫu — dùng nút In/Save as PDF của trình duyệt.
+- **In / Xuất PDF**: xuất phiếu chấm đầy đủ — thông tin học viên/mock/chủ đề Part 2, bảng điểm 4 tiêu chí kèm bằng chứng + con số đo được, bảng chi tiết từng câu hỏi (giây + nhận xét riêng), nhận xét tổng, gợi ý luyện tập, và bản chỉnh sửa mẫu — dùng nút In/Save as PDF của trình duyệt.
 
 ## Về việc tự động tạo transcript từ audio
 

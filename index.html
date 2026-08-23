@@ -57,10 +57,25 @@
   .metric-grid .m { display: flex; align-items: center; gap: 6px; }
   .metric-grid .m label { font-size: 0.72rem; color: var(--ink-600); flex: 1; }
   .metric-grid .m input { width: 64px; padding: 5px 8px; font-size: 0.8rem; text-align: center; }
+  .metric-grid .m input[readonly] { background: var(--blue-50); color: var(--blue-700); font-weight: 700; border-color: var(--blue-100); }
   tr.total td { background: var(--yellow-50); font-weight: 800; }
   tr.total .formula { font-size: 0.78rem; color: var(--ink-600); font-weight: 400; }
   tr.total .num { font-size: 1.4rem; color: var(--yellow-700); }
   .crit-desc { font-size: 0.8rem; color: var(--ink-600); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); }
+
+  /* ---- Per-question breakdown table ---- */
+  table.qa-table { width: 100%; border-collapse: collapse; }
+  table.qa-table th, table.qa-table td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; font-size: 0.82rem; }
+  table.qa-table th { background: var(--paper-tint); font-size: 0.68rem; text-transform: uppercase; color: var(--ink-600); }
+  table.qa-table select.part-select { width: auto; min-width: 56px; padding: 5px 6px; font-size: 0.78rem; font-weight: 700; }
+  table.qa-table input.qa-question { min-width: 140px; padding: 5px 8px; font-size: 0.82rem; }
+  table.qa-table textarea.qa-response, table.qa-table textarea.qa-comment { min-height: 44px; width: 100%; min-width: 150px; padding: 5px 8px; font-size: 0.8rem; resize: vertical; }
+  table.qa-table input.qa-seconds { width: 56px; padding: 5px 6px; font-size: 0.82rem; text-align: center; }
+  table.qa-table .qa-del { color: var(--ink-300); background: none; border: none; font-size: 1rem; cursor: pointer; }
+  table.qa-table .qa-del:hover { color: #E0457A; }
+  table.qa-table tr.part-p1 td.part-cell { border-left: 3px solid var(--blue-500); }
+  table.qa-table tr.part-p2 td.part-cell { border-left: 3px solid var(--pink-500); }
+  table.qa-table tr.part-p3 td.part-cell { border-left: 3px solid var(--yellow-500); }
 
   .saved-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px;
     border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; }
@@ -85,6 +100,12 @@
     .pr-section { font-weight: 800; font-size: 11.5pt; margin: 16px 0 6px; border-bottom: 1px solid #999; padding-bottom: 3px; }
     .pr-text { white-space: pre-wrap; font-size: 10pt; border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
     .page-break { page-break-before: always; }
+    table.pr-qa { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
+    table.pr-qa th, table.pr-qa td { border: 1px solid #999; padding: 5px 7px; font-size: 8.5pt; text-align: left; vertical-align: top; }
+    table.pr-qa th { background: #eee; font-size: 7.5pt; text-transform: uppercase; }
+    table.pr-qa td.part { font-weight: 800; white-space: nowrap; }
+    table.pr-qa td.sec { text-align: center; white-space: nowrap; }
+    table.pr-qa tr { page-break-inside: avoid; }
   }
   #printArea { display: none; }
 </style>
@@ -141,6 +162,21 @@
   </div>
 
   <div class="card">
+    <h2>Chi tiết từng câu hỏi &amp; câu trả lời</h2>
+    <div class="hint">Ghi số giây trả lời và nhận xét riêng cho từng câu hỏi ở Part 1/2/3. Số giây trung bình Part 1/2/3 sẽ tự động điền vào ô "Con số đo được" của Fluency &amp; Coherence bên dưới (ô màu xanh, không cần nhập tay).</div>
+    <div style="overflow-x:auto;">
+    <table class="qa-table">
+      <tr><th style="width:60px;">Phần</th><th style="width:170px;">Câu hỏi</th><th>Câu trả lời (trích/tóm tắt)</th><th style="width:65px;">Giây</th><th>Nhận xét</th><th style="width:24px;"></th></tr>
+      <tbody id="qaBody"></tbody>
+    </table>
+    </div>
+    <div class="actions" style="margin-top:10px;">
+      <button class="btn" id="btnAddQA">+ Thêm câu hỏi</button>
+    </div>
+    <div class="stat" id="qaSummary"></div>
+  </div>
+
+  <div class="card">
     <h2>Phiếu chấm — 4 tiêu chí</h2>
     <div class="hint">Điền Band, trích dẫn bằng chứng cụ thể (lời em nói) và các con số đo được cho từng tiêu chí — đúng cấu trúc phiếu chấm giấy.</div>
     <div style="overflow-x:auto;">
@@ -158,8 +194,9 @@
         <td><textarea class="evidence" data-field="evidence"></textarea><div class="crit-desc"></div></td>
         <td>
           <div class="metric-grid">
-            <div class="m"><label>P1 (giây/câu)</label><input type="text" data-metric="p1"></div>
-            <div class="m"><label>P2 (giây)</label><input type="text" data-metric="p2"></div>
+            <div class="m"><label>P1 (giây/câu, TB)</label><input type="text" data-metric="p1" readonly title="Tự động tính từ bảng 'Chi tiết từng câu hỏi'"></div>
+            <div class="m"><label>P2 (giây)</label><input type="text" data-metric="p2" readonly title="Tự động tính từ bảng 'Chi tiết từng câu hỏi'"></div>
+            <div class="m"><label>P3 (giây/câu, TB)</label><input type="text" data-metric="p3" readonly title="Tự động tính từ bảng 'Chi tiết từng câu hỏi'"></div>
             <div class="m"><label>Pause &gt;3s (lần)</label><input type="text" data-metric="pauses"></div>
           </div>
         </td>
@@ -275,6 +312,11 @@
     <tr class="total"><td colspan="2">BAND TỔNG</td><td colspan="2" id="prOverall"></td></tr>
   </table>
 
+  <div class="pr-section page-break">Chi tiết từng câu hỏi &amp; câu trả lời</div>
+  <table class="pr-qa" id="prQaTable">
+    <tr><th style="width:6%;">Phần</th><th style="width:20%;">Câu hỏi</th><th style="width:34%;">Câu trả lời</th><th style="width:6%;">Giây</th><th style="width:34%;">Nhận xét</th></tr>
+  </table>
+
   <div class="pr-section">Nhận xét</div>
   <div class="pr-text" id="prFeedback"></div>
 
@@ -324,13 +366,14 @@
     }
   };
   var LABELS = { fc: "Fluency & Coherence", lr: "Lexical Resource", gra: "Grammatical Range & Accuracy", pron: "Pronunciation" };
-  var METRIC_KEYS = { fc: ["p1", "p2", "pauses"], lr: ["band7", "repeated"], gra: ["complex", "errors"], pron: ["dropped", "stress", "intonation"] };
+  var METRIC_KEYS = { fc: ["p1", "p2", "p3", "pauses"], lr: ["band7", "repeated"], gra: ["complex", "errors"], pron: ["dropped", "stress", "intonation"] };
   var METRIC_LABELS = {
-    p1: "P1", p2: "P2", pauses: "Pause>3s",
+    p1: "P1", p2: "P2", p3: "P3", pauses: "Pause>3s",
     band7: "Từ band 7", repeated: "Từ lặp>2",
     complex: "Câu phức", errors: "Lỗi hệ thống",
     dropped: "Âm cuối rơi", stress: "Trọng âm sai", intonation: "Ngữ điệu"
   };
+  var PART_LABELS = { P1: "P1", P2: "P2", P3: "P3" };
   var PRACTICE = {
     fc: {
       low: "Luyện nói 1 phút liên tục về chủ đề quen thuộc (bấm giờ), không dừng lại sửa lỗi giữa chừng — ưu tiên giữ mạch nói trước. Ghi âm lại, đếm số lần dừng >3 giây.",
@@ -360,13 +403,14 @@
   function practiceTier(band) { return band <= 5 ? "low" : (band <= 7 ? "mid" : "high"); }
 
   function emptyMetrics() {
-    return { fc: { p1: "", p2: "", pauses: "" }, lr: { band7: "", repeated: "" }, gra: { complex: "", errors: "" }, pron: { dropped: "", stress: "", intonation: "" } };
+    return { fc: { p1: "", p2: "", p3: "", pauses: "" }, lr: { band7: "", repeated: "" }, gra: { complex: "", errors: "" }, pron: { dropped: "", stress: "", intonation: "" } };
   }
   var state = {
     id: null, studentName: "", testDate: "", mockNumber: "", part2Topic: "", transcript: "",
     scores: { fc: 4, lr: 4, gra: 4, pron: 4 },
     evidence: { fc: "", lr: "", gra: "", pron: "" },
     metrics: emptyMetrics(),
+    qaRows: [],
     feedback: "", improvement: "", rewrite75: ""
   };
   var audioURL = null;
@@ -413,6 +457,75 @@
     $("fillerCount").textContent = count;
   }
   $("transcript").addEventListener("input", onTranscriptChange);
+
+  // ---- Per-question breakdown (Part 1 / 2 / 3) ----
+  var qaBody = $("qaBody");
+
+  function addQaRow(part) {
+    state.qaRows.push({ part: part || "P1", question: "", response: "", seconds: "", comment: "" });
+    renderQaTable();
+  }
+
+  function renderQaTable() {
+    qaBody.innerHTML = "";
+    state.qaRows.forEach(function (row, idx) {
+      var tr = document.createElement("tr");
+      tr.className = "part-" + row.part.toLowerCase();
+      tr.innerHTML =
+        '<td class="part-cell"><select class="part-select">' +
+          '<option value="P1">P1</option><option value="P2">P2</option><option value="P3">P3</option>' +
+        '</select></td>' +
+        '<td><input type="text" class="qa-question" placeholder="VD: Do you work or study?"></td>' +
+        '<td><textarea class="qa-response" placeholder="Trích/tóm tắt câu trả lời..."></textarea></td>' +
+        '<td><input type="text" class="qa-seconds" placeholder="giây"></td>' +
+        '<td><textarea class="qa-comment" placeholder="Nhận xét riêng cho câu này..."></textarea></td>' +
+        '<td><button type="button" class="qa-del" title="Xoá dòng">✕</button></td>';
+      tr.querySelector(".part-select").value = row.part;
+      tr.querySelector(".qa-question").value = row.question;
+      tr.querySelector(".qa-response").value = row.response;
+      tr.querySelector(".qa-seconds").value = row.seconds;
+      tr.querySelector(".qa-comment").value = row.comment;
+
+      tr.querySelector(".part-select").addEventListener("change", function () { row.part = this.value; tr.className = "part-" + row.part.toLowerCase(); recomputeQaSummary(); });
+      tr.querySelector(".qa-question").addEventListener("input", function () { row.question = this.value; });
+      tr.querySelector(".qa-response").addEventListener("input", function () { row.response = this.value; });
+      tr.querySelector(".qa-seconds").addEventListener("input", function () { row.seconds = this.value; recomputeQaSummary(); });
+      tr.querySelector(".qa-comment").addEventListener("input", function () { row.comment = this.value; });
+      tr.querySelector(".qa-del").addEventListener("click", function () {
+        state.qaRows.splice(idx, 1);
+        renderQaTable();
+      });
+      qaBody.appendChild(tr);
+    });
+    recomputeQaSummary();
+  }
+
+  function recomputeQaSummary() {
+    var groups = { P1: [], P2: [], P3: [] };
+    state.qaRows.forEach(function (r) {
+      var sec = parseFloat(r.seconds);
+      if (!isNaN(sec) && groups[r.part]) groups[r.part].push(sec);
+    });
+    function avg(arr) { return arr.length ? (arr.reduce(function (a, b) { return a + b; }, 0) / arr.length) : null; }
+    function sum(arr) { return arr.length ? arr.reduce(function (a, b) { return a + b; }, 0) : null; }
+    var p1Avg = avg(groups.P1), p2Sum = sum(groups.P2), p3Avg = avg(groups.P3);
+
+    var fcRow = document.querySelector('.crit-row[data-crit="fc"]');
+    fcRow.querySelector('[data-metric="p1"]').value = p1Avg != null ? p1Avg.toFixed(1) : "";
+    fcRow.querySelector('[data-metric="p2"]').value = p2Sum != null ? p2Sum.toFixed(0) : "";
+    fcRow.querySelector('[data-metric="p3"]').value = p3Avg != null ? p3Avg.toFixed(1) : "";
+
+    var parts = [];
+    if (groups.P1.length) parts.push("P1: TB " + p1Avg.toFixed(1) + "s/câu (" + groups.P1.length + " câu)");
+    if (groups.P2.length) parts.push("P2: " + p2Sum.toFixed(0) + "s");
+    if (groups.P3.length) parts.push("P3: TB " + p3Avg.toFixed(1) + "s/câu (" + groups.P3.length + " câu)");
+    $("qaSummary").textContent = parts.length ? parts.join("  ·  ") : "Chưa có số liệu — thêm câu hỏi và nhập số giây để tính tự động.";
+  }
+
+  $("btnAddQA").addEventListener("click", function () {
+    var lastPart = state.qaRows.length ? state.qaRows[state.qaRows.length - 1].part : "P1";
+    addQaRow(lastPart);
+  });
 
   // ---- Rubric table ----
   function roundOverall(avg) {
@@ -550,7 +663,9 @@
     if (!found) return;
     state = JSON.parse(JSON.stringify(found));
     if (!state.metrics) state.metrics = emptyMetrics();
+    if (!state.metrics.fc.p3) state.metrics.fc.p3 = "";
     if (!state.evidence) state.evidence = { fc: "", lr: "", gra: "", pron: "" };
+    if (!state.qaRows) state.qaRows = [];
     applyState();
   }
 
@@ -571,6 +686,7 @@
         inp.value = (state.metrics && state.metrics[key] && state.metrics[key][inp.dataset.metric]) || "";
       });
     });
+    renderQaTable();
     onTranscriptChange();
     updateAll();
   }
@@ -597,8 +713,9 @@
     state = {
       id: null, studentName: "", testDate: "", mockNumber: "", part2Topic: "", transcript: "",
       scores: { fc: 4, lr: 4, gra: 4, pron: 4 }, evidence: { fc: "", lr: "", gra: "", pron: "" },
-      metrics: emptyMetrics(), feedback: "", improvement: "", rewrite75: ""
+      metrics: emptyMetrics(), qaRows: [], feedback: "", improvement: "", rewrite75: ""
     };
+    ["P1", "P1", "P1", "P2", "P3", "P3", "P3"].forEach(function (p) { state.qaRows.push({ part: p, question: "", response: "", seconds: "", comment: "" }); });
     if (audioURL) { URL.revokeObjectURL(audioURL); audioURL = null; }
     $("player").src = "";
     $("audioWrap").style.display = "none";
@@ -639,6 +756,23 @@
     $("prMetGRA").textContent = fmtMetrics("gra");
     $("prMetPron").textContent = fmtMetrics("pron");
 
+    var qaTable = $("prQaTable");
+    while (qaTable.rows.length > 1) qaTable.deleteRow(1);
+    if (state.qaRows.length === 0) {
+      var trEmpty = qaTable.insertRow();
+      var tdEmpty = trEmpty.insertCell();
+      tdEmpty.colSpan = 5; tdEmpty.textContent = "Chưa có dữ liệu câu hỏi chi tiết.";
+    } else {
+      state.qaRows.forEach(function (row) {
+        var tr = qaTable.insertRow();
+        var c1 = tr.insertCell(); c1.className = "part"; c1.textContent = row.part;
+        var c2 = tr.insertCell(); c2.textContent = row.question || "—";
+        var c3 = tr.insertCell(); c3.textContent = row.response || "—";
+        var c4 = tr.insertCell(); c4.className = "sec"; c4.textContent = row.seconds || "—";
+        var c5 = tr.insertCell(); c5.textContent = row.comment || "—";
+      });
+    }
+
     $("prFeedback").textContent = state.feedback || "(chưa có nhận xét)";
     $("prImprovement").textContent = state.improvement || "(chưa có gợi ý luyện tập)";
     $("prRewrite").textContent = state.rewrite75 || "(chưa có bản chỉnh sửa mẫu)";
@@ -647,6 +781,7 @@
 
   // ---- Init ----
   $("testDate").valueAsDate = new Date();
+  ["P1", "P1", "P1", "P2", "P3", "P3", "P3"].forEach(function (p) { state.qaRows.push({ part: p, question: "", response: "", seconds: "", comment: "" }); });
   applyState();
   renderSavedList();
 })();
