@@ -21,7 +21,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Assign', 'Remind', 'Stage', 'Clip', 'ClipFiles', 'Info')]
+    [ValidateSet('Assign', 'Remind', 'Stage', 'Clip', 'ClipFiles', 'Encode', 'Info')]
     [string]$Action = 'Info',
 
     # Ngày cần xử lý (yyyy-MM-dd). Mặc định: hôm nay.
@@ -31,7 +31,12 @@ param(
     [string[]]$Missing,
 
     # Ép dùng đúng số DAY thay vì tính theo ngày.
-    [int]$Day
+    [int]$Day,
+
+    # Link Drive của file PPT / DOCX. Có link thì tin nhắn dùng link thay cho
+    # "file đính kèm" — dùng cho Zalo Web, nơi không đính kèm file tự động được.
+    [string]$PptUrl,
+    [string]$DocUrl
 )
 
 $ErrorActionPreference = 'Stop'
@@ -75,9 +80,18 @@ function New-AssignMessage {
     & $n "🌟 IELTS NHÀ - $dayTag · $viDate"
     & $n "CHỦ ĐỀ HÔM NAY: $($lesson.topic.ToUpper())"
     & $n ""
-    & $n "📎 Cô gửi kèm 2 file ngay dưới tin nhắn này:"
-    & $n "   1) $(Split-Path $lesson.ppt -Leaf)  →  BÀI GIẢNG (học trước)"
-    & $n "   2) $(Split-Path $lesson.doc -Leaf)  →  BÀI TẬP (làm rồi nộp)"
+    if ($PptUrl -or $DocUrl) {
+        & $n "📎 TÀI LIỆU HÔM NAY - bấm tải về:"
+        & $n "   1) BÀI GIẢNG (học trước):"
+        & $n "   $PptUrl"
+        & $n "   2) BÀI TẬP (làm rồi nộp):"
+        & $n "   $DocUrl"
+    }
+    else {
+        & $n "📎 Cô gửi kèm 2 file ngay dưới tin nhắn này:"
+        & $n "   1) $(Split-Path $lesson.ppt -Leaf)  →  BÀI GIẢNG (học trước)"
+        & $n "   2) $(Split-Path $lesson.doc -Leaf)  →  BÀI TẬP (làm rồi nộp)"
+    }
     & $n ""
     & $n "━━━━━━━━━━━━━━━━━━━━━━━"
     & $n "① BÀI GIẢNG PPT - 20 phút"
@@ -231,6 +245,16 @@ switch ($Action) {
         $msg = if ($Missing) { New-RemindMessage } else { New-AssignMessage }
         Set-Clipboard -Value $msg
         "✔ Đã copy tin nhắn vào clipboard ($($msg.Length) ký tự). Ctrl+V vào Zalo."
+    }
+
+    'Encode' {
+        # Base64 hoá 2 file của ngày để tải lên Google Drive.
+        $r = Copy-Materials
+        foreach ($f in $r.Files) {
+            $b64 = Join-Path $r.Dir ((Split-Path $f -Leaf) + '.b64')
+            [IO.File]::WriteAllText($b64, [Convert]::ToBase64String([IO.File]::ReadAllBytes($f)))
+            "$b64"
+        }
     }
 
     'ClipFiles' {

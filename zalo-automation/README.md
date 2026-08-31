@@ -113,3 +113,17 @@ out/                       tin nhắn + file đã stage theo từng ngày (tự 
 ```
 
 `IeltsDaily.ps1` và `tracking.csv` **phải giữ UTF-8 có BOM** — Windows PowerShell 5.1 đọc file không BOM theo bảng mã ANSI và sẽ vỡ hết tiếng Việt.
+
+---
+
+## 8. Vì sao gửi bằng Zalo Web, không dùng Zalo PC
+
+Ứng dụng **Zalo trên máy chặn chụp màn hình**: cửa sổ mở đúng vị trí, không thu nhỏ, nhưng trong ảnh chụp thì trắng trơn — chỉ thấy desktop phía sau. Máy không đọc được tên hội thoại đang mở, nên gửi qua Zalo PC là gửi mù. Điểm số và nhận xét của học viên mà bay nhầm hội thoại thì không rút lại được.
+
+**Zalo Web (`chat.zalo.me`) hiển thị bình thường** trong khung Browser, đọc được tên nhóm trước khi gửi. Tác vụ `ielts-nha-giao-bai` đã chuyển sang hướng này.
+
+Hệ quả kèm theo: Zalo Web không đính kèm file tự động được, nên mỗi sáng tác vụ tải 1 PPT + 1 DOCX của ngày lên thư mục Drive `03 - TÀI LIỆU BÀI GIẢNG MỖI NGÀY` rồi gửi link. File nào đã có trên Drive thì dùng lại, không tải lên lần hai.
+
+**Cần đăng nhập Zalo Web một lần** bằng cách quét mã QR trên điện thoại. Phiên đăng nhập hết hạn thì tác vụ sẽ dừng và báo cô quét lại, chứ không gửi bừa.
+
+Hai tác vụ `ielts-nha-nhac-nop-bai` và `ielts-nha-cham-bai-bao-cao` **hiện vẫn dùng đường Zalo PC** — tức là phần gửi vào nhóm sẽ hỏng. Nói một tiếng là chuyển nốt sang Zalo Web.
