@@ -13,7 +13,7 @@ PODS=("nL1_N_cX1II|Talk About Your Day (B2-C1)"
 "mr3q9qDCvt4|Talk About Daily Routine")
 NP=${#PODS[@]}
 echo '{'
-echo '  "startDate": "2026-08-31",'
+echo '  "startDate": "2026-09-01",'
 echo '  "timezone": "Asia/Ho_Chi_Minh",'
 echo '  "zaloGroup": "_IELTS NHÀ",'
 echo '  "students": ['
@@ -35,7 +35,7 @@ while IFS= read -r topic; do
   name="${topic#*- }"
   p="${PODS[$((i % NP))]}"
   vid="${p%%|*}"; vtitle="${p#*|}"
-  date=$(date -d "2026-08-31 +$i days" +%Y-%m-%d)
+  date=$(date -d "2026-09-01 +$i days" +%Y-%m-%d)
   sep=","; if [ $i -eq 55 ]; then sep=""; fi
   printf '    { "day": %d, "date": "%s", "topic": "%s", "ppt": "Bai giang PPT/%s.pptx", "doc": "Bai tap Word/%s.docx", "pdf": "PDF goc (Keith)/%s.pdf", "podcastId": "%s", "podcastTitle": "%s" }%s\n' \
     $((i+1)) "$date" "$name" "$topic" "$topic" "$topic" "$vid" "$vtitle" "$sep"
