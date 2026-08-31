@@ -95,8 +95,10 @@ Trong Zalo: **Enter = gửi**, **Shift+Enter = xuống dòng**. Tin nhắn nhi�
 1. **Mở quyền 2 thư mục Drive.** Kết nối Drive hiện tại chỉ chia sẻ được cho *email cụ thể*, không bật được "bất kỳ ai có link". Chọn 1 trong 2:
    - Cho biết email Gmail của 2 em → máy chia sẻ quyền Editor thẳng cho từng em (an toàn hơn).
    - Hoặc cô tự vào thư mục `_IELTS NHÀ - NỘP BÀI` → Chia sẻ → "Bất kỳ ai có đường liên kết" → **Người chỉnh sửa**.
-2. **Kho tài liệu dự phòng (không bắt buộc).** Kéo thả 2 thư mục `Bai giang PPT` và `Bai tap Word` (tổng ~3 MB) vào `03 - TÀI LIỆU BÀI GIẢNG MỖI NGÀY` một lần duy nhất — để em nào lỡ mất tin nhắn Zalo vẫn tải lại được.
-3. **Nghe file ghi âm để chấm Pronunciation.**
+2. **Cấp quyền điều khiển Zalo — 1 lần duy nhất.** Máy chỉ gõ/dán được vào Zalo khi cô bấm **Cho phép** ở hộp thoại xin quyền. Cách làm gọn nhất: vào mục **Scheduled** ở thanh bên → chọn `ielts-nha-giao-bai` → **Run now** → bấm Cho phép. Quyền đó được lưu lại cho các lần chạy sau, những ngày sau sẽ không hỏi nữa.
+   Nếu cô không muốn cấp quyền: mọi tin nhắn vẫn được soạn sẵn trong `out\DAYxx_GIAOBAI.txt`, cô chỉ cần chạy `.\IeltsDaily.ps1 -Action Clip` rồi Ctrl+V vào Zalo.
+3. **Kho tài liệu dự phòng (không bắt buộc).** Kéo thả 2 thư mục `Bai giang PPT` và `Bai tap Word` (tổng ~3 MB) vào `03 - TÀI LIỆU BÀI GIẢNG MỖI NGÀY` một lần duy nhất — để em nào lỡ mất tin nhắn Zalo vẫn tải lại được.
+4. **Nghe file ghi âm để chấm Pronunciation.**
 
 ---
 
